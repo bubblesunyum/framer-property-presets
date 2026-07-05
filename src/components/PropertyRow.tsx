@@ -2,9 +2,11 @@ import type { PropertyDescriptor } from "../schema/propertySchema"
 import { Dropdown } from "./Dropdown"
 import { LengthField } from "./LengthField"
 import { NumberField } from "./NumberField"
+import { PaddingField } from "./PaddingField"
 import "./PropertyRow.css"
 import { SegmentedControl } from "./SegmentedControl"
 import { TextField } from "./TextField"
+import { ToggleSwitch } from "./ToggleSwitch"
 
 export interface FieldProps {
     descriptor: PropertyDescriptor
@@ -54,6 +56,8 @@ function renderControl(descriptor: PropertyDescriptor, value: unknown, onChange:
                     onChange={onChange}
                 />
             )
+        case "padding":
+            return <PaddingField value={typeof value === "string" ? value : null} onChange={onChange} />
         case "boolean":
             return (
                 <input
@@ -64,10 +68,9 @@ function renderControl(descriptor: PropertyDescriptor, value: unknown, onChange:
             )
         case "clip-toggle":
             return (
-                <input
-                    type="checkbox"
+                <ToggleSwitch
                     checked={value === "hidden" || value === "clip"}
-                    onChange={(event) => onChange(event.currentTarget.checked ? "hidden" : "visible")}
+                    onChange={(checked) => onChange(checked ? "hidden" : "visible")}
                 />
             )
         case "yes-no":

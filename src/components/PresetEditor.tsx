@@ -9,6 +9,7 @@ import {
   finalizePreset,
   type DraftPreset,
   type Preset,
+  type PresetProperties,
   type PresetPropertyKey,
   type PropertyGroup,
 } from '../types/preset'
@@ -24,9 +25,18 @@ type SaveState = {kind: 'idle' | 'saving'} | {kind: 'error' | 'note'; message: s
 
 const GROUPS: {key: PropertyGroup; title: string}[] = [
   {key: 'position', title: 'Position'},
-  {key: 'size', title: 'Resizing'},
+  {key: 'size', title: 'Size'},
   {key: 'layout', title: 'Layout'},
 ]
+
+/** Derives the Flow control's displayed value from the two underlying keys it
+ *  composites — Row/Column both mean `layout: "stack"`, differing only in
+ *  `stackDirection`, which no longer has its own editor row. */
+function flowValueFor(properties: PresetProperties): string {
+  if (properties.layout === 'grid') return 'grid'
+  if (properties.layout === 'stack') return properties.stackDirection === 'horizontal' ? 'row' : 'column'
+  return 'none'
+}
 
 function computeInitiallyIncluded(properties: DraftPreset['properties']): Set<PresetPropertyKey> {
   const included = new Set<PresetPropertyKey>()
@@ -121,6 +131,36 @@ export function PresetEditor(props: PresetEditorProps) {
     if (!descriptor) return null
     if (!Object.prototype.hasOwnProperty.call(draft.properties, key)) return null
     if (descriptor.visibleWhen && !descriptor.visibleWhen(draft.properties)) return null
+
+    // Flow is a composite control over two underlying keys (`layout` +
+    // `stackDirection`, folding direction into Row/Column) rather than a plain
+    // 1:1 field — special-cased here so PropertyRow/renderControl stay generic.
+    if (key === 'layout') {
+      return {
+        descriptor,
+        value: flowValueFor(draft.properties),
+        included: isIncluded(key),
+        onChange: (next) => {
+          if (next === null || next === 'grid') {
+            updateProperty('layout', next)
+            return
+          }
+          setDraft((prev) => ({
+            ...prev,
+            properties: {
+              ...prev.properties,
+              layout: 'stack',
+              stackDirection: next === 'row' ? 'horizontal' : 'vertical',
+            },
+          }))
+          if (props.mode === 'create') {
+            setTouchedKeys((prev) => new Set(prev).add('layout').add('stackDirection'))
+          }
+        },
+        onToggleIncluded: props.mode === 'edit' ? () => toggleIncluded(key) : undefined,
+      }
+    }
+
     return {
       descriptor,
       value: draft.properties[key],
@@ -223,8 +263,8 @@ export function PresetEditor(props: PresetEditorProps) {
 
           return (
             <section key={key} className='preset-editor-section'>
-              <h3 className='preset-editor-heading'>{title}</h3>
               <div className='framer-divider' />
+              <h3 className='preset-editor-heading'>{title}</h3>
               {!hasPins && rows.length === 0 ? (
                 <p className='preset-editor-empty'>This layer doesn't support {title.toLowerCase()} properties.</p>
               ) : (

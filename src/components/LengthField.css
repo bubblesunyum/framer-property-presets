@@ -4,7 +4,7 @@
     width: 100%;
 }
 
-.length-field-amount {
+.length-field > .number-field {
     flex: 0.85;
     min-width: 0;
 }

@@ -39,6 +39,13 @@ export interface LengthDescriptor extends BaseDescriptor {
   placeholder?: string
 }
 
+/** CSS-shorthand-style padding: a single value (all sides equal) or a 4-value
+ *  "top right bottom left" string — the SDK type has no 2-value form, so a
+ *  vertical/horizontal split is a UI-only convenience over the 4-value string. */
+export interface PaddingDescriptor extends BaseDescriptor {
+  control: 'padding'
+}
+
 /** Width/height-style fields: a numeric value plus a sizing mode (fixed px, relative
  *  %, hug contents, or fill/fraction) — mirrors Framer's own Size panel fields. */
 export interface SizeLengthDescriptor extends BaseDescriptor {
@@ -94,6 +101,7 @@ export interface SegmentedDescriptor extends BaseDescriptor {
 export type PropertyDescriptor =
   | DimensionDescriptor
   | LengthDescriptor
+  | PaddingDescriptor
   | SizeLengthDescriptor
   | NumberDescriptor
   | BooleanDescriptor
@@ -153,7 +161,7 @@ export const PROPERTY_SCHEMA: PropertyDescriptor[] = [
   {
     key: 'position',
     group: 'position',
-    label: 'Position',
+    label: 'Type',
     control: 'select',
     nullable: false,
     guard: supportsPosition,
@@ -181,9 +189,13 @@ export const PROPERTY_SCHEMA: PropertyDescriptor[] = [
     control: 'segmented',
     iconSet: 'flow',
     guard: supportsLayout,
+    // The underlying `layout`/`stackDirection` mapping (row = stack+horizontal,
+    // column = stack+vertical) is handled specially in PresetEditor's fieldProps —
+    // this options list only drives which 4 buttons render.
     options: [
       {value: 'none', label: 'None'},
-      {value: 'stack', label: 'Stack'},
+      {value: 'row', label: 'Row'},
+      {value: 'column', label: 'Column'},
       {value: 'grid', label: 'Grid'},
     ],
   },
@@ -201,7 +213,7 @@ export const PROPERTY_SCHEMA: PropertyDescriptor[] = [
     key: 'padding',
     group: 'layout',
     label: 'Padding',
-    control: 'length',
+    control: 'padding',
     guard: supportsLayout,
     visibleWhen: hasLayout,
   },
@@ -234,7 +246,7 @@ export const PROPERTY_SCHEMA: PropertyDescriptor[] = [
     control: 'select',
     nullable: true,
     guard: hasStackLayout,
-    visibleWhen: isStack,
+    visibleWhen: hasLayout,
     options: [
       {value: 'start', label: 'Start'},
       {value: 'center', label: 'Center'},
@@ -251,7 +263,7 @@ export const PROPERTY_SCHEMA: PropertyDescriptor[] = [
     control: 'segmented',
     iconSet: 'alignment',
     guard: hasStackLayout,
-    visibleWhen: isStack,
+    visibleWhen: hasLayout,
     options: [
       {value: 'start', label: 'Start'},
       {value: 'center', label: 'Center'},
@@ -264,7 +276,7 @@ export const PROPERTY_SCHEMA: PropertyDescriptor[] = [
     label: 'Wrap',
     control: 'yes-no',
     guard: hasStackLayout,
-    visibleWhen: isStack,
+    visibleWhen: hasLayout,
   },
 
   // ---- Layout (grid-specific) ----

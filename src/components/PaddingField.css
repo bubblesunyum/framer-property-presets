@@ -1,0 +1,32 @@
+.padding-field {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+}
+
+.padding-field-axes,
+.padding-field-sides {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+}
+
+.padding-field-toggle {
+    width: 26px;
+    height: 26px;
+    flex-shrink: 0;
+    background: var(--framer-color-bg-tertiary);
+    color: var(--framer-color-text-tertiary);
+    border-radius: 6px;
+}
+
+.padding-field-toggle:hover {
+    color: var(--framer-color-text);
+}
+
+.padding-field-toggle.is-active {
+    color: var(--framer-color-tint);
+}

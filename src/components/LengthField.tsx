@@ -1,5 +1,5 @@
-import {useEffect, useState} from 'react'
 import {Dropdown, type DropdownOption} from './Dropdown'
+import {NumberField} from './NumberField'
 import './LengthField.css'
 
 type LengthMode = 'px' | '%' | 'fit-content' | 'fr'
@@ -32,36 +32,19 @@ function serializeLength(mode: LengthMode, amount: number | null): string {
 
 /** Width/height-style field: a numeric amount plus a sizing mode, matching Framer's
  *  own Size panel fields (a fixed pixel value, a percentage relative to the parent,
- *  hugging content, or filling available space via a flex fraction). */
+ *  hugging content, or filling available space via a flex fraction). NumberField
+ *  already buffers input and shows a unit suffix, so relative mode's amount reads
+ *  e.g. "50%" instead of a bare, ambiguous "50". */
 export function LengthField({value, onChange}: LengthFieldProps) {
   const parsed = parseLength(value)
-  const [amountText, setAmountText] = useState(parsed.amount === null ? '' : String(parsed.amount))
-
-  // Deliberately keyed on `value` alone — `parsed` is freshly derived from it above.
-  useEffect(() => {
-    setAmountText(parsed.amount === null ? '' : String(parsed.amount))
-  }, [value])
-
-  const commitAmount = () => {
-    const trimmed = amountText.trim()
-    const parsedNumber = trimmed === '' ? NaN : Number(trimmed)
-    const amount = Number.isNaN(parsedNumber) ? (parsed.amount ?? 0) : parsedNumber
-    setAmountText(String(amount))
-    onChange(serializeLength(parsed.mode, amount))
-  }
 
   return (
     <div className='length-field'>
       {parsed.mode !== 'fit-content' && (
-        <input
-          type='number'
-          className='length-field-amount'
-          value={amountText}
-          onChange={(event) => setAmountText(event.currentTarget.value)}
-          onBlur={commitAmount}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') commitAmount()
-          }}
+        <NumberField
+          value={parsed.amount}
+          unit={parsed.mode === '%' ? '%' : undefined}
+          onChange={(amount) => onChange(serializeLength(parsed.mode, amount))}
         />
       )}
       <div className='length-field-mode'>

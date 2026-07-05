@@ -16,10 +16,14 @@ export const EDITOR_ROWS: Record<PropertyGroup, EditorRow[]> = {
     position: ["position"],
     size: [{ columns: [["width", "minWidth", "maxWidth"], ["height", "minHeight", "maxHeight"]] }],
     layout: [
+        // Direction is folded into the Flow control itself (Row/Column) — not a
+        // separate row here. Order matches the explicit gap/padding/distribute/
+        // align/wrap grouping requested for whenever Flow isn't "None".
         "layout",
-        ["stackDirection", "stackWrapEnabled"],
+        "gap",
+        "padding",
         ["stackDistribution", "stackAlignment"],
-        ["gap", "padding"],
+        "stackWrapEnabled",
         ["gridColumnCount", "gridRowCount"],
         "gridAlignment",
         "gridColumnWidthType",

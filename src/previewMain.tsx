@@ -26,7 +26,7 @@ const fakePreset: Preset = {
         width: "1fr",
         height: "1fr",
         minWidth: "100px",
-        maxWidth: "600px",
+        maxWidth: "80%",
         minHeight: "200px",
         maxHeight: "800px",
     },

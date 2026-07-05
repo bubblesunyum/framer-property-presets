@@ -1,109 +1,109 @@
 .preset-editor {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 /* Sticky header: stays put while the property sections below scroll. */
 .preset-editor-name-row {
-    flex-shrink: 0;
-    padding: 15px;
-    border-bottom: 1px solid var(--framer-color-divider);
+  flex-shrink: 0;
+  padding: 15px 15px 0;
+  /* border-bottom: 1px solid var(--framer-color-divider); */
 }
 
 .preset-editor-name {
-    width: 100%;
-    font-weight: 600;
+  width: 100%;
+  font-weight: 600;
 }
 
 .preset-editor-hint {
-    color: var(--framer-color-text-tertiary);
-    font-size: 11px;
-    margin-top: 8px;
+  color: var(--framer-color-text-tertiary);
+  font-size: 11px;
+  margin-top: 8px;
 }
 
 .preset-editor-scroll {
-    flex: 1;
-    overflow-y: auto;
-    padding: 4px 0 15px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 0 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .preset-editor-section {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 14px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 0;
 }
 
 .preset-editor-heading {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--framer-color-text);
-    padding: 0 15px;
-    margin-bottom: 2px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--framer-color-text);
+  padding: 0 15px;
+  margin-bottom: 2px;
 }
 
 .preset-editor-empty {
-    color: var(--framer-color-text-tertiary);
-    font-size: 11px;
-    padding: 0 15px;
+  color: var(--framer-color-text-tertiary);
+  font-size: 11px;
+  padding: 0 15px;
 }
 
 .position-cross {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 15px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 15px 10px;
 }
 
 .position-cross-top,
 .position-cross-bottom {
-    width: 100px;
+  width: 100px;
 }
 
 .position-cross-middle {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
 }
 
 .position-cross-middle > .control-only {
-    flex: 1;
-    min-width: 0;
+  flex: 1;
+  min-width: 0;
 }
 
 .preset-editor-footer {
-    flex-shrink: 0;
-    padding: 12px 15px 15px;
-    border-top: 1px solid var(--framer-color-divider);
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+  flex-shrink: 0;
+  padding: 12px 15px 15px;
+  border-top: 1px solid var(--framer-color-divider);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .preset-editor-message {
-    font-size: 11px;
-    text-align: center;
+  font-size: 11px;
+  text-align: center;
 }
 
 .preset-editor-message.is-error {
-    color: #ff5c5c;
+  color: #ff5c5c;
 }
 
 .preset-editor-message.is-note {
-    color: var(--framer-color-tint);
+  color: var(--framer-color-tint);
 }
 
 .preset-editor-actions {
-    display: flex;
-    gap: 8px;
+  display: flex;
+  gap: 8px;
 }
 
 .preset-editor-actions button {
-    flex: 1;
+  flex: 1;
 }
