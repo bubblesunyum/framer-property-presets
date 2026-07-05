@@ -20,6 +20,10 @@
     color: var(--framer-color-text-secondary);
     font-size: 12px;
     font-weight: 600;
+    /* framer.css's global button reset puts 10px of horizontal padding on every
+       button — fine for a full-width control, but it leaves almost nothing for the
+       label once 4 of these share one narrow mini-field (e.g. Width's Fill/Fit/%/px). */
+    padding: 0 2px;
     transition:
         background-color 0.15s,
         color 0.15s,

@@ -1,19 +1,6 @@
 .length-field {
     display: flex;
+    flex-direction: column;
     gap: 6px;
     width: 100%;
-}
-
-.length-field > .number-field {
-    /* The amount now always carries a unit suffix (px/%/fr) on top of up to 3-4
-       digits, and the mode dropdown only ever shows a <=4-char short label — the
-       amount side needs the larger share now, reversed from when the dropdown
-       showed full words like "Relative". */
-    flex: 1.05;
-    min-width: 0;
-}
-
-.length-field-mode {
-    flex: 0.95;
-    min-width: 0;
 }

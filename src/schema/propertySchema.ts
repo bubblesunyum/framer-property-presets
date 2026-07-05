@@ -50,6 +50,10 @@ export interface PaddingDescriptor extends BaseDescriptor {
  *  %, hug contents, or fill/fraction) — mirrors Framer's own Size panel fields. */
 export interface SizeLengthDescriptor extends BaseDescriptor {
   control: 'size-length'
+  /** Min/Max constraints only ever serialize to px or % (the SDK's WidthConstraint/
+   *  HeightConstraint types have no fit-content/fr variant) — restricts the mode
+   *  picker to those two instead of the full Width/Height set. */
+  constrained?: boolean
 }
 
 export interface NumberDescriptor extends BaseDescriptor {
@@ -176,10 +180,38 @@ export const PROPERTY_SCHEMA: PropertyDescriptor[] = [
   // ---- Size ----
   {key: 'width', group: 'size', label: 'Width', control: 'size-length', guard: supportsSize},
   {key: 'height', group: 'size', label: 'Height', control: 'size-length', guard: supportsSize},
-  {key: 'minWidth', group: 'size', label: 'Min Width', control: 'size-length', guard: supportsSizeConstraints},
-  {key: 'maxWidth', group: 'size', label: 'Max Width', control: 'size-length', guard: supportsSizeConstraints},
-  {key: 'minHeight', group: 'size', label: 'Min Height', control: 'size-length', guard: supportsSizeConstraints},
-  {key: 'maxHeight', group: 'size', label: 'Max Height', control: 'size-length', guard: supportsSizeConstraints},
+  {
+    key: 'minWidth',
+    group: 'size',
+    label: 'Min Width',
+    control: 'size-length',
+    constrained: true,
+    guard: supportsSizeConstraints,
+  },
+  {
+    key: 'maxWidth',
+    group: 'size',
+    label: 'Max Width',
+    control: 'size-length',
+    constrained: true,
+    guard: supportsSizeConstraints,
+  },
+  {
+    key: 'minHeight',
+    group: 'size',
+    label: 'Min Height',
+    control: 'size-length',
+    constrained: true,
+    guard: supportsSizeConstraints,
+  },
+  {
+    key: 'maxHeight',
+    group: 'size',
+    label: 'Max Height',
+    control: 'size-length',
+    constrained: true,
+    guard: supportsSizeConstraints,
+  },
 
   // ---- Layout (shared) ----
   {

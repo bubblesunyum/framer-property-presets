@@ -1,5 +1,5 @@
-import {Dropdown, type DropdownOption} from './Dropdown'
 import {NumberField} from './NumberField'
+import {SegmentedControl} from './SegmentedControl'
 import './LengthField.css'
 
 type LengthMode = 'px' | '%' | 'fit-content' | 'fr'
@@ -7,13 +7,21 @@ type LengthMode = 'px' | '%' | 'fit-content' | 'fr'
 interface LengthFieldProps {
   value: string | null
   onChange: (value: string) => void
+  /** Restricts the mode picker to px/% — for Min/Max constraint fields, which (unlike
+   *  Width/Height) can never be "Fill" or "Fit Content" — see SizeLengthDescriptor. */
+  constrained?: boolean
 }
 
-const MODE_OPTIONS: DropdownOption[] = [
-  {value: 'px', label: 'Fixed', shortLabel: 'Fix'},
-  {value: '%', label: 'Relative', shortLabel: 'Rel'},
-  {value: 'fit-content', label: 'Fit Content', shortLabel: 'Fit'},
+const SIZE_MODE_OPTIONS = [
   {value: 'fr', label: 'Fill'},
+  {value: 'fit-content', label: 'Fit'},
+  {value: '%', label: '%'},
+  {value: 'px', label: 'px'},
+]
+
+const CONSTRAINT_MODE_OPTIONS = [
+  {value: '%', label: '%'},
+  {value: 'px', label: 'px'},
 ]
 
 function parseLength(raw: string | null): {mode: LengthMode; amount: number | null} {
@@ -30,13 +38,12 @@ function serializeLength(mode: LengthMode, amount: number | null): string {
   return `${amount ?? (mode === 'fr' ? 1 : 0)}${mode}`
 }
 
-/** Width/height-style field: a numeric amount plus a sizing mode, matching Framer's
+/** Width/height-style field: a numeric amount above a mode picker, matching Framer's
  *  own Size panel fields (a fixed pixel value, a percentage relative to the parent,
- *  hugging content, or filling available space via a flex fraction). NumberField
- *  already buffers input and shows a unit suffix, so the amount always reads with
- *  its mode attached (e.g. "50%", "375px", "1fr") instead of a bare, ambiguous
- *  number. */
-export function LengthField({value, onChange}: LengthFieldProps) {
+ *  hugging content, or filling available space via a flex fraction). The mode picker
+ *  is an always-visible segmented control rather than a dropdown, so all its options
+ *  are one click away instead of hidden behind an open/close step. */
+export function LengthField({value, onChange, constrained}: LengthFieldProps) {
   const parsed = parseLength(value)
 
   return (
@@ -48,13 +55,11 @@ export function LengthField({value, onChange}: LengthFieldProps) {
           onChange={(amount) => onChange(serializeLength(parsed.mode, amount))}
         />
       )}
-      <div className='length-field-mode'>
-        <Dropdown
-          value={parsed.mode}
-          options={MODE_OPTIONS}
-          onChange={(mode) => onChange(serializeLength((mode as LengthMode) ?? 'px', parsed.amount))}
-        />
-      </div>
+      <SegmentedControl
+        value={parsed.mode}
+        options={constrained ? CONSTRAINT_MODE_OPTIONS : SIZE_MODE_OPTIONS}
+        onChange={(mode) => onChange(serializeLength(mode as LengthMode, parsed.amount))}
+      />
     </div>
   )
 }

@@ -43,7 +43,13 @@ function renderControl(descriptor: PropertyDescriptor, value: unknown, onChange:
                 />
             )
         case "size-length":
-            return <LengthField value={typeof value === "string" ? value : null} onChange={onChange} />
+            return (
+                <LengthField
+                    value={typeof value === "string" ? value : null}
+                    constrained={descriptor.constrained}
+                    onChange={onChange}
+                />
+            )
         case "number":
             return (
                 <NumberField value={typeof value === "number" ? value : null} min={descriptor.min} onChange={onChange} />
