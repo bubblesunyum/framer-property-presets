@@ -38,6 +38,37 @@ function flowValueFor(properties: PresetProperties): string {
   return 'none'
 }
 
+/** Switching Flow to Row/Column/Grid inside the editor only sets `layout` (+
+ *  `stackDirection`) — if the preset's *original* node wasn't already that flow
+ *  type, its stack/grid-specific sibling keys were never captured, so they'd stay
+ *  permanently invisible (every field's visibility also requires the key to already
+ *  exist — see `fieldProps`). These fill in a starting value the first time each
+ *  sub-group becomes relevant, without overwriting anything already present. */
+const STACK_DEFAULTS: PresetProperties = {
+  stackDistribution: 'start',
+  stackAlignment: 'start',
+  stackWrapEnabled: false,
+}
+
+const GRID_DEFAULTS: PresetProperties = {
+  gridColumnCount: '2',
+  gridRowCount: null,
+  gridAlignment: 'start',
+  gridColumnWidthType: 'minmax',
+  gridColumnWidth: 100,
+  gridColumnMinWidth: 100,
+  gridRowHeightType: 'auto',
+  gridRowHeight: 100,
+}
+
+function withDefaults(properties: PresetProperties, defaults: PresetProperties): PresetProperties {
+  const next = {...properties}
+  for (const key of Object.keys(defaults) as PresetPropertyKey[]) {
+    if (!Object.prototype.hasOwnProperty.call(next, key)) next[key] = defaults[key]
+  }
+  return next
+}
+
 function computeInitiallyIncluded(properties: DraftPreset['properties']): Set<PresetPropertyKey> {
   const included = new Set<PresetPropertyKey>()
   for (const key of Object.keys(properties) as PresetPropertyKey[]) {
@@ -97,7 +128,14 @@ export function PresetEditor(props: PresetEditorProps) {
   const [draft, setDraft] = useState<DraftPreset>(() =>
     props.mode === 'create'
       ? captureFromNode(props.node)
-      : {name: props.preset.name, properties: props.preset.properties},
+      : {
+          name: props.preset.name,
+          // Presets saved before Clip Content existed won't have `overflow` at all —
+          // there's no live node here to re-check `supportsOverflow` against, so just
+          // assume it applies (applying to an incompatible node later is still
+          // filtered out by that guard in applyPreset.ts).
+          properties: withDefaults(props.preset.properties, {overflow: null}),
+        },
   )
   const [initiallyIncluded] = useState<Set<PresetPropertyKey>>(() =>
     props.mode === 'create' ? computeInitiallyIncluded(draft.properties) : new Set(),
@@ -141,20 +179,28 @@ export function PresetEditor(props: PresetEditorProps) {
         value: flowValueFor(draft.properties),
         included: isIncluded(key),
         onChange: (next) => {
-          if (next === null || next === 'grid') {
-            updateProperty('layout', next)
+          if (next === null) {
+            updateProperty('layout', null)
             return
           }
+          const defaults = next === 'grid' ? GRID_DEFAULTS : STACK_DEFAULTS
+          const layoutKeys: PresetPropertyKey[] =
+            next === 'grid' ? ['layout'] : ['layout', 'stackDirection']
           setDraft((prev) => ({
             ...prev,
-            properties: {
-              ...prev.properties,
-              layout: 'stack',
-              stackDirection: next === 'row' ? 'horizontal' : 'vertical',
-            },
+            properties: withDefaults(
+              {
+                ...prev.properties,
+                layout: next === 'grid' ? 'grid' : 'stack',
+                ...(next !== 'grid' && {stackDirection: next === 'row' ? 'horizontal' : 'vertical'}),
+              },
+              defaults,
+            ),
           }))
           if (props.mode === 'create') {
-            setTouchedKeys((prev) => new Set(prev).add('layout').add('stackDirection'))
+            setTouchedKeys(
+              (prev) => new Set([...prev, ...layoutKeys, ...(Object.keys(defaults) as PresetPropertyKey[])]),
+            )
           }
         },
         onToggleIncluded: props.mode === 'edit' ? () => toggleIncluded(key) : undefined,

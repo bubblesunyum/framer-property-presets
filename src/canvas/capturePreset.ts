@@ -13,8 +13,13 @@ export function captureFromNode(node: CanvasNode): DraftPreset {
         if (!descriptor.guard(node)) continue
         if (descriptor.visibleWhen && !descriptor.visibleWhen(properties)) continue
 
+        // Always record the key once the guard says it applies to this node — even if
+        // the live SDK value happens to come back `undefined` for some edge case (e.g.
+        // a trait whose value is normally expressed via a different sibling property).
+        // Silently skipping it here previously meant a structurally-supported field
+        // (e.g. Clip Content on some node types) could fail to capture at all.
         const value = (node as unknown as Record<string, unknown>)[descriptor.key]
-        if (value !== undefined) properties[descriptor.key] = value
+        properties[descriptor.key] = value === undefined ? null : value
     }
 
     return createDraftFromProperties(properties)

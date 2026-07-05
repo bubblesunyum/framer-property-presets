@@ -7,6 +7,9 @@ import "./App.css"
 import { PresetEditor } from "./components/PresetEditor"
 import type { Preset } from "./types/preset"
 
+// Deliberately mimics the user's bug repro: a preset originally captured from a
+// "None"-flow node, so it has no overflow/stack/grid keys at all — everything past
+// gap/padding/position/size should only appear once Flow is switched in the editor.
 const fakePreset: Preset = {
     id: "preview",
     name: "Card Stack",
@@ -14,15 +17,10 @@ const fakePreset: Preset = {
     updatedAt: Date.now(),
     location: "local",
     properties: {
-        layout: "stack",
-        stackDirection: "vertical",
-        stackAlignment: "center",
-        stackDistribution: "space-between",
+        layout: null,
         position: "relative",
-        stackWrapEnabled: false,
         gap: "10px",
         padding: "16px",
-        overflow: "hidden",
         width: "1fr",
         height: "1fr",
         minWidth: "100px",

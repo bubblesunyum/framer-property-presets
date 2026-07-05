@@ -10,7 +10,7 @@ interface LengthFieldProps {
 }
 
 const MODE_OPTIONS: DropdownOption[] = [
-  {value: 'px', label: 'Fixed', shortLabel: 'Fixed'},
+  {value: 'px', label: 'Fixed', shortLabel: 'Fix'},
   {value: '%', label: 'Relative', shortLabel: 'Rel'},
   {value: 'fit-content', label: 'Fit Content', shortLabel: 'Fit'},
   {value: 'fr', label: 'Fill'},
@@ -33,8 +33,9 @@ function serializeLength(mode: LengthMode, amount: number | null): string {
 /** Width/height-style field: a numeric amount plus a sizing mode, matching Framer's
  *  own Size panel fields (a fixed pixel value, a percentage relative to the parent,
  *  hugging content, or filling available space via a flex fraction). NumberField
- *  already buffers input and shows a unit suffix, so relative mode's amount reads
- *  e.g. "50%" instead of a bare, ambiguous "50". */
+ *  already buffers input and shows a unit suffix, so the amount always reads with
+ *  its mode attached (e.g. "50%", "375px", "1fr") instead of a bare, ambiguous
+ *  number. */
 export function LengthField({value, onChange}: LengthFieldProps) {
   const parsed = parseLength(value)
 
@@ -43,7 +44,7 @@ export function LengthField({value, onChange}: LengthFieldProps) {
       {parsed.mode !== 'fit-content' && (
         <NumberField
           value={parsed.amount}
-          unit={parsed.mode === '%' ? '%' : undefined}
+          unit={parsed.mode}
           onChange={(amount) => onChange(serializeLength(parsed.mode, amount))}
         />
       )}

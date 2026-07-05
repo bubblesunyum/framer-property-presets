@@ -26,4 +26,12 @@ export default defineConfig(({ mode }) => ({
     // cache with a copy that's missing framer-plugin, breaking the real dev server with
     // 504s until its cache is cleared — this happened once already.
     cacheDir: mode === "preview-mock" ? "node_modules/.vite-preview-mock" : undefined,
+    // Forces one complete dependency scan on cold start instead of an initial pass that
+    // discovers `framer-plugin` late and has to redo the bundle with new chunk hashes —
+    // that second pass is what left the browser holding a reference to a chunk file
+    // from the first pass that no longer exists ("chunk-*.js 404" / "does not exist in
+    // the optimize deps directory").
+    optimizeDeps: {
+        include: ["react", "react-dom", "react-dom/client", "react/jsx-dev-runtime", "framer-plugin"],
+    },
 }))

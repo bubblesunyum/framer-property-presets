@@ -246,7 +246,7 @@ export const PROPERTY_SCHEMA: PropertyDescriptor[] = [
     control: 'select',
     nullable: true,
     guard: hasStackLayout,
-    visibleWhen: hasLayout,
+    visibleWhen: isStack,
     options: [
       {value: 'start', label: 'Start'},
       {value: 'center', label: 'Center'},
@@ -263,7 +263,7 @@ export const PROPERTY_SCHEMA: PropertyDescriptor[] = [
     control: 'segmented',
     iconSet: 'alignment',
     guard: hasStackLayout,
-    visibleWhen: hasLayout,
+    visibleWhen: isStack,
     options: [
       {value: 'start', label: 'Start'},
       {value: 'center', label: 'Center'},
@@ -276,7 +276,7 @@ export const PROPERTY_SCHEMA: PropertyDescriptor[] = [
     label: 'Wrap',
     control: 'yes-no',
     guard: hasStackLayout,
-    visibleWhen: hasLayout,
+    visibleWhen: isStack,
   },
 
   // ---- Layout (grid-specific) ----
