@@ -1,0 +1,43 @@
+/* Dark-neon skin: framer.css's structural rules (control sizing, radius, the .row
+   grid pattern) are kept as-is — only the color tokens they read from are overridden
+   here, locked to one dark palette regardless of Framer's own host theme. `!important`
+   is deliberate: Framer's host app injects its own theme values at runtime and a plain
+   override can't reliably out-rank that, since injected values often land as inline
+   styles which normally beat external stylesheet rules. */
+:root {
+    --framer-color-bg: #0a0a0f !important;
+    --framer-color-bg-secondary: #131318 !important;
+    --framer-color-bg-tertiary: #1d1d26 !important;
+
+    --framer-color-text: #f2f2f6 !important;
+    --framer-color-text-secondary: #9b9ba8 !important;
+    --framer-color-text-tertiary: #6b6b78 !important;
+    --framer-color-text-reversed: #ffffff !important;
+
+    --framer-color-divider: rgba(255, 255, 255, 0.08) !important;
+
+    --framer-color-tint: #8b5cf6 !important;
+    --framer-color-tint-dimmed: rgba(139, 92, 246, 0.4) !important;
+    --framer-color-tint-dark: #7c4de8 !important;
+    --framer-color-tint-extra-dark: #6a3ad1 !important;
+
+    color-scheme: dark;
+}
+
+body {
+    background: var(--framer-color-bg);
+    color-scheme: dark;
+}
+
+/* Reserve the soft glow for the one primary action per screen, not everywhere. */
+.framer-button-primary {
+    box-shadow: 0 4px 20px var(--framer-color-tint-dimmed);
+}
+
+.framer-button-primary:focus-visible,
+input:focus-visible,
+select:focus-visible {
+    box-shadow:
+        inset 0 0 0 1px var(--framer-color-tint),
+        0 0 0 3px var(--framer-color-tint-dimmed);
+}

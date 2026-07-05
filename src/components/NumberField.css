@@ -1,0 +1,22 @@
+.number-field {
+    position: relative;
+    width: 100%;
+}
+
+.number-field-input {
+    width: 100%;
+}
+
+.number-field-input.has-unit {
+    padding-right: 26px;
+}
+
+.number-field-unit {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 11px;
+    color: var(--framer-color-text-tertiary);
+    pointer-events: none;
+}

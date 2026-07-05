@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:www.framer.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:unpkg.com)",
+      "Bash(gh api *)",
+      "Bash(curl -s https://api.github.com/repos/framer/plugins/contents)",
+      "Bash(python3 -c \"import json,sys; [print\\(x['name'], x['type']\\) for x in json.load\\(sys.stdin\\)]\")",
+      "Bash(curl -s https://api.github.com/repos/framer/plugins/contents/plugins/tidyup/src)",
+      "Bash(curl -s https://api.github.com/repos/framer/plugins/contents/plugins/design-system/src)",
+      "Bash(curl -s https://api.github.com/repos/framer/plugins/contents/starters)",
+      "Bash(curl -s https://raw.githubusercontent.com/framer/plugins/main/plugins/tidyup/src/App.tsx)",
+      "Bash(curl -s https://raw.githubusercontent.com/framer/plugins/main/plugins/tidyup/src/App.css)",
+      "Bash(curl -s https://api.github.com/repos/framer/plugins/contents/packages)",
+      "Bash(curl -s https://raw.githubusercontent.com/framer/plugins/main/plugins/tidyup/src/Stepper.tsx)",
+      "Bash(curl -s https://raw.githubusercontent.com/framer/plugins/main/plugins/tidyup/src/Stepper.css)",
+      "Bash(curl -s https://api.github.com/repos/framer/plugins/contents/packages/plugin-tools)",
+      "Bash(curl -s https://api.github.com/repos/framer/plugins/contents/starters/cms)",
+      "Bash(curl -s https://raw.githubusercontent.com/framer/plugins/main/starters/cms/framer.json)",
+      "Bash(curl -s https://raw.githubusercontent.com/framer/plugins/main/starters/cms/package.json)",
+      "Bash(curl -s https://raw.githubusercontent.com/framer/plugins/main/starters/cms/vite.config.ts)",
+      "Bash(curl -s https://raw.githubusercontent.com/framer/plugins/main/starters/cms/index.html)",
+      "Bash(curl -s https://api.github.com/repos/framer/plugins/contents/starters/cms/src)",
+      "Bash(curl -s https://api.github.com/repos/framer/plugins/contents/starters/cms/public)",
+      "WebFetch(domain:www.npmjs.com)",
+      "Bash(curl -s https://registry.npmjs.org/create-framer-plugin)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(d.get\\('readme','NO README FIELD'\\)[:6000]\\)\")",
+      "Bash(npm create *)",
+      "Bash(curl -sL https://unpkg.com/framer-plugin/package.json)",
+      "Bash(curl -sL https://unpkg.com/framer-plugin@3.10.3/dist/index.d.ts -o /private/tmp/claude-501/-Users-bubbles-dev-framer-property-presets/45e45911-e0fb-48b3-8eaf-508480788813/scratchpad/framer-plugin.d.ts)",
+      "Bash(curl -sL https://unpkg.com/framer-plugin@3.10.3/styles/framer.css -o /private/tmp/claude-501/-Users-bubbles-dev-framer-property-presets/45e45911-e0fb-48b3-8eaf-508480788813/scratchpad/framer.css)"
+    ]
+  }
+}

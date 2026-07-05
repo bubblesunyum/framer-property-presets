@@ -1,0 +1,23 @@
+{
+    "version": "0.0.1",
+    "configurations": [
+        {
+            "name": "dev",
+            "runtimeExecutable": "/bin/bash",
+            "runtimeArgs": ["-c", "PATH=/opt/homebrew/opt/node@22/bin:$PATH npm run dev"],
+            "port": 5173
+        },
+        {
+            "name": "preview",
+            "runtimeExecutable": "/bin/bash",
+            "runtimeArgs": ["-c", "PATH=/opt/homebrew/opt/node@22/bin:$PATH npm run preview -- --port 4173"],
+            "port": 4173
+        },
+        {
+            "name": "preview-mock",
+            "runtimeExecutable": "/bin/bash",
+            "runtimeArgs": ["-c", "PATH=/opt/homebrew/opt/node@22/bin:$PATH npx vite --mode preview-mock --port 5180"],
+            "port": 5180
+        }
+    ]
+}

@@ -1,0 +1,49 @@
+.segmented-control {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: var(--framer-color-bg-tertiary);
+    border-radius: 8px;
+    padding: 2px;
+    width: 100%;
+    height: 30px;
+}
+
+.segmented-option {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    background: none;
+    color: var(--framer-color-text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+    transition:
+        background-color 0.15s,
+        color 0.15s,
+        box-shadow 0.15s;
+}
+
+.segmented-option span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.segmented-option:hover {
+    background: none;
+    color: var(--framer-color-text);
+}
+
+.segmented-option.is-active {
+    background: var(--framer-color-tint);
+    color: var(--framer-color-text-reversed);
+    box-shadow: 0 0 12px var(--framer-color-tint-dimmed);
+}
+
+.segmented-option.is-active:hover {
+    background: var(--framer-color-tint);
+    color: var(--framer-color-text-reversed);
+}

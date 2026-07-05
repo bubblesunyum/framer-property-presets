@@ -1,0 +1,27 @@
+{
+    "name": "framer-property-presets",
+    "private": true,
+    "version": "0.0.0",
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "tsc -b && vite build",
+        "check-typescript": "tsc -b --noEmit",
+        "preview": "vite preview"
+    },
+    "dependencies": {
+        "framer-plugin": "3.10.3",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0"
+    },
+    "devDependencies": {
+        "@types/node": "^22.10.0",
+        "@types/react": "^18.3.7",
+        "@types/react-dom": "^18.3.0",
+        "@vitejs/plugin-react": "^4.7.0",
+        "typescript": "^5.6.2",
+        "vite": "^6.0.3",
+        "vite-plugin-framer": "^1.1.1",
+        "vite-plugin-mkcert": "^1.17.6"
+    }
+}

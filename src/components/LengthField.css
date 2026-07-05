@@ -1,0 +1,15 @@
+.length-field {
+    display: flex;
+    gap: 6px;
+    width: 100%;
+}
+
+.length-field-amount {
+    flex: 0.85;
+    min-width: 0;
+}
+
+.length-field-mode {
+    flex: 1.15;
+    min-width: 0;
+}
