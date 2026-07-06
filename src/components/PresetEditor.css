@@ -22,61 +22,6 @@
   margin-top: 8px;
 }
 
-.preset-editor-scroll {
-  flex: 1;
-  overflow-y: auto;
-  padding: 4px 0 15px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.preset-editor-section {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 14px 0;
-}
-
-.preset-editor-heading {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--framer-color-text);
-  padding: 0 15px;
-  margin-bottom: 2px;
-}
-
-.preset-editor-empty {
-  color: var(--framer-color-text-tertiary);
-  font-size: 11px;
-  padding: 0 15px;
-}
-
-.position-cross {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 15px 10px;
-}
-
-.position-cross-top,
-.position-cross-bottom {
-  width: 100px;
-}
-
-.position-cross-middle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-}
-
-.position-cross-middle > .control-only {
-  flex: 1;
-  min-width: 0;
-}
-
 .preset-editor-footer {
   flex-shrink: 0;
   padding: 12px 15px 15px;

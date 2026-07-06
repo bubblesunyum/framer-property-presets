@@ -80,6 +80,13 @@ export interface YesNoDescriptor extends BaseDescriptor {
   control: 'yes-no'
 }
 
+/** Combined distribute + align control: a single 3×3 grid that writes both
+ *  `stackDistribution` (main axis) and `stackAlignment` (cross axis) at once — see
+ *  AlignmentGrid and the `stackAlignment` composite in buildFieldProps. */
+export interface AlignGridDescriptor extends BaseDescriptor {
+  control: 'align-grid'
+}
+
 export interface SelectOption {
   value: string
   label: string
@@ -111,6 +118,7 @@ export type PropertyDescriptor =
   | BooleanDescriptor
   | ClipToggleDescriptor
   | YesNoDescriptor
+  | AlignGridDescriptor
   | SelectDescriptor
   | SegmentedDescriptor
 
@@ -289,18 +297,15 @@ export const PROPERTY_SCHEMA: PropertyDescriptor[] = [
     ],
   },
   {
+    // Combined distribute + align: the 3×3 grid writes both stackDistribution and
+    // stackAlignment (see AlignmentGrid / buildFieldProps). stackDistribution stays in
+    // the schema for capture/apply but no longer has its own editor row.
     key: 'stackAlignment',
     group: 'layout',
-    label: 'Align',
-    control: 'segmented',
-    iconSet: 'alignment',
+    label: 'Alignment',
+    control: 'align-grid',
     guard: hasStackLayout,
     visibleWhen: isStack,
-    options: [
-      {value: 'start', label: 'Start'},
-      {value: 'center', label: 'Center'},
-      {value: 'end', label: 'End'},
-    ],
   },
   {
     key: 'stackWrapEnabled',

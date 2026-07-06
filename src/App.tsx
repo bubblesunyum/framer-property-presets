@@ -1,51 +1,51 @@
-import type { CanvasNode } from "framer-plugin"
-import { useState } from "react"
-import { PresetEditor } from "./components/PresetEditor"
-import { PresetList } from "./components/PresetList"
-import { useSelection } from "./hooks/useSelection"
-import type { Preset } from "./types/preset"
+import type {CanvasNode} from 'framer-plugin'
+import {useState} from 'react'
+import {MainView} from './components/MainView'
+import {PresetEditor} from './components/PresetEditor'
+import {useSelection} from './hooks/useSelection'
+import type {Preset} from './types/preset'
 
-type View =
-    | { screen: "list" }
-    | { screen: "create"; node: CanvasNode; selectionCount: number }
-    | { screen: "edit"; preset: Preset }
+type Screen =
+  | {kind: 'main'}
+  | {kind: 'create'; node: CanvasNode; selectionCount: number}
+  | {kind: 'edit'; preset: Preset}
 
 export function App() {
-    const selection = useSelection()
-    const [view, setView] = useState<View>({ screen: "list" })
+  const selection = useSelection()
+  const [screen, setScreen] = useState<Screen>({kind: 'main'})
 
-    if (view.screen === "create") {
-        return (
-            <PresetEditor
-                mode="create"
-                node={view.node}
-                selectionCount={view.selectionCount}
-                onSaved={() => setView({ screen: "list" })}
-                onCancel={() => setView({ screen: "list" })}
-            />
-        )
-    }
-
-    if (view.screen === "edit") {
-        return (
-            <PresetEditor
-                mode="edit"
-                preset={view.preset}
-                onSaved={() => setView({ screen: "list" })}
-                onCancel={() => setView({ screen: "list" })}
-            />
-        )
-    }
-
+  if (screen.kind === 'create') {
     return (
-        <PresetList
-            selection={selection}
-            onRequestNew={() => {
-                const [primary] = selection
-                if (!primary) return
-                setView({ screen: "create", node: primary, selectionCount: selection.length })
-            }}
-            onRequestEdit={(preset) => setView({ screen: "edit", preset })}
-        />
+      <PresetEditor
+        mode='create'
+        node={screen.node}
+        selectionCount={screen.selectionCount}
+        onSaved={() => setScreen({kind: 'main'})}
+        onCancel={() => setScreen({kind: 'main'})}
+      />
     )
+  }
+
+  if (screen.kind === 'edit') {
+    return (
+      <PresetEditor
+        mode='edit'
+        preset={screen.preset}
+        onSaved={() => setScreen({kind: 'main'})}
+        onCancel={() => setScreen({kind: 'main'})}
+      />
+    )
+  }
+
+  return (
+    <MainView
+      selection={selection}
+      onRequestNew={() => {
+        const [primary] = selection
+        if (!primary) return
+        setScreen({kind: 'create', node: primary, selectionCount: selection.length})
+      }}
+      onRequestEdit={(preset) => setScreen({kind: 'edit', preset})}
+    />
+  )
 }

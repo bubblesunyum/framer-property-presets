@@ -1,4 +1,5 @@
 import type { PropertyDescriptor } from "../schema/propertySchema"
+import { AlignmentGrid, type AlignmentValue } from "./AlignmentGrid"
 import { Dropdown } from "./Dropdown"
 import { LengthField } from "./LengthField"
 import { NumberField } from "./NumberField"
@@ -87,6 +88,10 @@ function renderControl(descriptor: PropertyDescriptor, value: unknown, onChange:
                     onChange={(next) => onChange(next === "yes")}
                 />
             )
+        case "align-grid":
+            // `value` is the composite {direction, distribution, alignment} assembled in
+            // buildFieldProps; onChange sends back the two stack keys the grid resolved.
+            return <AlignmentGrid value={value as AlignmentValue} onChange={onChange} />
         case "select":
             return (
                 <Dropdown

@@ -10,7 +10,10 @@ import mkcert from "vite-plugin-mkcert"
 // src/mocks/framer-plugin.ts). Only active under that mode; `npm run dev`/`build` are
 // unaffected.
 export default defineConfig(({ mode }) => ({
-    plugins: [react(), mkcert(), framer()],
+    // mkcert forces HTTPS, which the real dev server needs to embed in Framer. The
+    // standalone preview-mock harness isn't embedded in anything, so it serves plain
+    // HTTP instead — otherwise the self-signed cert blocks non-browser preview clients.
+    plugins: mode === "preview-mock" ? [react(), framer()] : [react(), mkcert(), framer()],
     resolve: {
         // Exact-match regex, not the plain-string object form — that does a prefix
         // replace and would also swallow the unrelated "framer-plugin/framer.css" CSS

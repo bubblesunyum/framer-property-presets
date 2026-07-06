@@ -55,5 +55,6 @@
 }
 
 .dropdown-option.is-active {
-    color: var(--framer-color-tint);
+    background: var(--control-selected-bg);
+    color: var(--framer-color-text);
 }

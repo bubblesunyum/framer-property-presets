@@ -21,6 +21,13 @@
     --framer-color-tint-dark: #7c4de8 !important;
     --framer-color-tint-extra-dark: #6a3ad1 !important;
 
+    /* Selected-option surface for choice controls (segmented control, tabs, dropdown
+       option, alignment grid). Framer's own "standard gray" selected look — a raised
+       neutral pill — rather than the neon tint, which is reserved for primary actions
+       and focus. */
+    --control-selected-bg: #2f2f3a;
+    --control-selected-fg: var(--framer-color-text);
+
     color-scheme: dark;
 }
 

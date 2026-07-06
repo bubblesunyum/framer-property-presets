@@ -47,3 +47,32 @@ export async function applyPresetToSelection(preset: Preset, selection: CanvasNo
 
     return outcome
 }
+
+/** Live-edit path (Design panel): writes a small set of attribute changes to every
+ *  selected node that supports each key. Fire-and-forget — each node is written
+ *  independently so one unsupported/failed node doesn't block the others, and failures
+ *  are logged rather than surfaced (the panel stays responsive as the user edits). */
+export async function applyAttributesToSelection(
+    changes: Record<string, unknown>,
+    selection: CanvasNode[]
+): Promise<void> {
+    await Promise.all(
+        selection.map(async (node) => {
+            const payload: Record<string, unknown> = {}
+
+            for (const key of Object.keys(changes) as PresetPropertyKey[]) {
+                const descriptor = descriptorFor(key)
+                if (!descriptor || !descriptor.guard(node)) continue
+                payload[key] = changes[key]
+            }
+
+            if (Object.keys(payload).length === 0) return
+
+            try {
+                await (node as unknown as SettableNode).setAttributes(payload)
+            } catch (error) {
+                console.error("Live edit failed for node", node, error)
+            }
+        })
+    )
+}

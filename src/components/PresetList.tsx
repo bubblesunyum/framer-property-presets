@@ -61,8 +61,6 @@ export function PresetList({selection, onRequestNew, onRequestEdit}: PresetListP
 
   return (
     <main className='preset-list'>
-      <div className='preset-list-header'>{newButton}</div>
-      <div className='framer-divider' />
       <div className='preset-list-body framer-hide-scrollbar'>
         {isLoading ? (
           <div className='preset-list-empty'>
@@ -86,6 +84,9 @@ export function PresetList({selection, onRequestNew, onRequestEdit}: PresetListP
           ))
         )}
       </div>
+      {/* Sticky footer floats over the scrolling list; the body reserves bottom padding
+          so the last row is never hidden behind it. */}
+      <div className='preset-list-footer'>{newButton}</div>
     </main>
   )
 }

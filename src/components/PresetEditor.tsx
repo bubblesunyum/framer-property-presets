@@ -2,8 +2,7 @@ import {supportsName, type CanvasNode} from 'framer-plugin'
 import {useState} from 'react'
 import {captureFromNode} from '../canvas/capturePreset'
 import {useBufferedInput} from '../hooks/useBufferedInput'
-import {EDITOR_ROWS} from '../schema/editorLayout'
-import {descriptorFor, isExplicitValue} from '../schema/propertySchema'
+import {isExplicitValue} from '../schema/propertySchema'
 import {createPreset, updatePreset} from '../storage/presetRepository'
 import {
   finalizePreset,
@@ -11,63 +10,16 @@ import {
   type Preset,
   type PresetProperties,
   type PresetPropertyKey,
-  type PropertyGroup,
 } from '../types/preset'
+import {buildFieldProps, withDefaults} from './fieldProps'
 import './PresetEditor.css'
-import {PinWidget} from './PinWidget'
-import {PropertyColumnPair, PropertyControlOnly, PropertyFieldPair, PropertyRow, type FieldProps} from './PropertyRow'
+import {PropertySections} from './PropertySections'
 
 export type PresetEditorProps =
   | {mode: 'create'; node: CanvasNode; selectionCount: number; onSaved: () => void; onCancel: () => void}
   | {mode: 'edit'; preset: Preset; onSaved: () => void; onCancel: () => void}
 
 type SaveState = {kind: 'idle' | 'saving'} | {kind: 'error' | 'note'; message: string}
-
-const GROUPS: {key: PropertyGroup; title: string}[] = [
-  {key: 'position', title: 'Position'},
-  {key: 'size', title: 'Size'},
-  {key: 'layout', title: 'Layout'},
-]
-
-/** Derives the Flow control's displayed value from the two underlying keys it
- *  composites — Row/Column both mean `layout: "stack"`, differing only in
- *  `stackDirection`, which no longer has its own editor row. */
-function flowValueFor(properties: PresetProperties): string {
-  if (properties.layout === 'grid') return 'grid'
-  if (properties.layout === 'stack') return properties.stackDirection === 'horizontal' ? 'row' : 'column'
-  return 'none'
-}
-
-/** Switching Flow to Row/Column/Grid inside the editor only sets `layout` (+
- *  `stackDirection`) — if the preset's *original* node wasn't already that flow
- *  type, its stack/grid-specific sibling keys were never captured, so they'd stay
- *  permanently invisible (every field's visibility also requires the key to already
- *  exist — see `fieldProps`). These fill in a starting value the first time each
- *  sub-group becomes relevant, without overwriting anything already present. */
-const STACK_DEFAULTS: PresetProperties = {
-  stackDistribution: 'start',
-  stackAlignment: 'start',
-  stackWrapEnabled: false,
-}
-
-const GRID_DEFAULTS: PresetProperties = {
-  gridColumnCount: '2',
-  gridRowCount: null,
-  gridAlignment: 'start',
-  gridColumnWidthType: 'minmax',
-  gridColumnWidth: 100,
-  gridColumnMinWidth: 100,
-  gridRowHeightType: 'auto',
-  gridRowHeight: 100,
-}
-
-function withDefaults(properties: PresetProperties, defaults: PresetProperties): PresetProperties {
-  const next = {...properties}
-  for (const key of Object.keys(defaults) as PresetPropertyKey[]) {
-    if (!Object.prototype.hasOwnProperty.call(next, key)) next[key] = defaults[key]
-  }
-  return next
-}
 
 function computeInitiallyIncluded(properties: DraftPreset['properties']): Set<PresetPropertyKey> {
   const included = new Set<PresetPropertyKey>()
@@ -76,11 +28,6 @@ function computeInitiallyIncluded(properties: DraftPreset['properties']): Set<Pr
   }
   return included
 }
-
-type EditorRowState =
-  | {solo: FieldProps | null}
-  | {pair: readonly [FieldProps | null, FieldProps | null]}
-  | {columns: readonly [FieldProps[], FieldProps[]]}
 
 interface PresetNameFieldProps {
   value: string
@@ -150,71 +97,40 @@ export function PresetEditor(props: PresetEditorProps) {
   const isIncluded = (key: PresetPropertyKey) =>
     props.mode === 'edit' ? !removedKeys.has(key) : initiallyIncluded.has(key) || touchedKeys.has(key)
 
-  const updateProperty = (key: PresetPropertyKey, value: unknown) => {
-    setDraft((prev) => ({...prev, properties: {...prev.properties, [key]: value}}))
-    if (props.mode === 'create') setTouchedKeys((prev) => (prev.has(key) ? prev : new Set(prev).add(key)))
+  const commit = (changes: PresetProperties) => {
+    setDraft((prev) => ({...prev, properties: {...prev.properties, ...changes}}))
+    if (props.mode === 'create') {
+      const keys = Object.keys(changes) as PresetPropertyKey[]
+      setTouchedKeys((prev) => {
+        const next = new Set(prev)
+        for (const key of keys) next.add(key)
+        return next
+      })
+    }
   }
 
   const toggleIncluded = (key: PresetPropertyKey) => {
     setRemovedKeys((prev) => {
       const next = new Set(prev)
-      if (next.has(key)) next.delete(key)
-      else next.add(key)
+      // The alignment grid stands in for both stack keys, so its label toggles the two
+      // in lockstep — stackDistribution has no separate row to toggle on its own.
+      const keys: PresetPropertyKey[] = key === 'stackAlignment' ? ['stackAlignment', 'stackDistribution'] : [key]
+      const willRemove = !next.has(key)
+      for (const target of keys) {
+        if (willRemove) next.add(target)
+        else next.delete(target)
+      }
       return next
     })
   }
 
-  const fieldProps = (key: PresetPropertyKey): FieldProps | null => {
-    const descriptor = descriptorFor(key)
-    if (!descriptor) return null
-    if (!Object.prototype.hasOwnProperty.call(draft.properties, key)) return null
-    if (descriptor.visibleWhen && !descriptor.visibleWhen(draft.properties)) return null
-
-    // Flow is a composite control over two underlying keys (`layout` +
-    // `stackDirection`, folding direction into Row/Column) rather than a plain
-    // 1:1 field — special-cased here so PropertyRow/renderControl stay generic.
-    if (key === 'layout') {
-      return {
-        descriptor,
-        value: flowValueFor(draft.properties),
-        included: isIncluded(key),
-        onChange: (next) => {
-          if (next === null) {
-            updateProperty('layout', null)
-            return
-          }
-          const defaults = next === 'grid' ? GRID_DEFAULTS : STACK_DEFAULTS
-          const layoutKeys: PresetPropertyKey[] =
-            next === 'grid' ? ['layout'] : ['layout', 'stackDirection']
-          setDraft((prev) => ({
-            ...prev,
-            properties: withDefaults(
-              {
-                ...prev.properties,
-                layout: next === 'grid' ? 'grid' : 'stack',
-                ...(next !== 'grid' && {stackDirection: next === 'row' ? 'horizontal' : 'vertical'}),
-              },
-              defaults,
-            ),
-          }))
-          if (props.mode === 'create') {
-            setTouchedKeys(
-              (prev) => new Set([...prev, ...layoutKeys, ...(Object.keys(defaults) as PresetPropertyKey[])]),
-            )
-          }
-        },
-        onToggleIncluded: props.mode === 'edit' ? () => toggleIncluded(key) : undefined,
-      }
-    }
-
-    return {
-      descriptor,
-      value: draft.properties[key],
-      included: isIncluded(key),
-      onChange: (value) => updateProperty(key, value),
-      onToggleIncluded: props.mode === 'edit' ? () => toggleIncluded(key) : undefined,
-    }
-  }
+  const fieldProps = (key: PresetPropertyKey) =>
+    buildFieldProps(key, {
+      properties: draft.properties,
+      isIncluded,
+      commit,
+      onToggleIncluded: props.mode === 'edit' ? toggleIncluded : undefined,
+    })
 
   const handleSave = async () => {
     const name = draft.name?.trim()
@@ -275,80 +191,8 @@ export function PresetEditor(props: PresetEditorProps) {
         )}
       </div>
 
-      <div className='preset-editor-scroll framer-hide-scrollbar'>
-        {GROUPS.map(({key, title}) => {
-          const pins =
-            key === 'position'
-              ? {
-                  top: fieldProps('top'),
-                  right: fieldProps('right'),
-                  bottom: fieldProps('bottom'),
-                  left: fieldProps('left'),
-                }
-              : null
-          const hasPins = pins && (pins.top || pins.right || pins.bottom || pins.left)
-
-          const rows: EditorRowState[] = EDITOR_ROWS[key]
-            .map((row): EditorRowState => {
-              if (typeof row === 'string') return {solo: fieldProps(row)}
-              if ('columns' in row) {
-                return {
-                  columns: [
-                    row.columns[0].map(fieldProps).filter((field): field is FieldProps => field !== null),
-                    row.columns[1].map(fieldProps).filter((field): field is FieldProps => field !== null),
-                  ],
-                }
-              }
-              return {pair: [fieldProps(row[0]), fieldProps(row[1])]}
-            })
-            .filter((row) => {
-              if ('solo' in row) return row.solo !== null
-              if ('pair' in row) return row.pair[0] !== null || row.pair[1] !== null
-              return row.columns[0].length > 0 || row.columns[1].length > 0
-            })
-
-          return (
-            <section key={key} className='preset-editor-section'>
-              <div className='framer-divider' />
-              <h3 className='preset-editor-heading'>{title}</h3>
-              {!hasPins && rows.length === 0 ? (
-                <p className='preset-editor-empty'>This layer doesn't support {title.toLowerCase()} properties.</p>
-              ) : (
-                <>
-                  {pins && hasPins && (
-                    <div className='position-cross'>
-                      {pins.top && (
-                        <div className='position-cross-top'>
-                          <PropertyControlOnly {...pins.top} />
-                        </div>
-                      )}
-                      <div className='position-cross-middle'>
-                        {pins.left && <PropertyControlOnly {...pins.left} />}
-                        <PinWidget
-                          top={pins.top?.value != null}
-                          right={pins.right?.value != null}
-                          bottom={pins.bottom?.value != null}
-                          left={pins.left?.value != null}
-                        />
-                        {pins.right && <PropertyControlOnly {...pins.right} />}
-                      </div>
-                      {pins.bottom && (
-                        <div className='position-cross-bottom'>
-                          <PropertyControlOnly {...pins.bottom} />
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  {rows.map((row, index) => {
-                    if ('solo' in row) return row.solo && <PropertyRow key={index} {...row.solo} />
-                    if ('pair' in row) return <PropertyFieldPair key={index} left={row.pair[0]} right={row.pair[1]} />
-                    return <PropertyColumnPair key={index} left={row.columns[0]} right={row.columns[1]} />
-                  })}
-                </>
-              )}
-            </section>
-          )
-        })}
+      <div className='property-scroll framer-hide-scrollbar'>
+        <PropertySections fieldProps={fieldProps} />
       </div>
 
       <div className='preset-editor-footer'>

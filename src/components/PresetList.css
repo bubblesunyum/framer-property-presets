@@ -1,11 +1,8 @@
 .preset-list {
+    position: relative;
     display: flex;
     flex-direction: column;
     height: 100%;
-}
-
-.preset-list-header {
-    padding: 15px;
 }
 
 .preset-new-button {
@@ -22,7 +19,8 @@
 .preset-list-body {
     flex: 1;
     overflow-y: auto;
-    padding: 10px 15px 15px;
+    /* Bottom padding clears the sticky footer so the last row is never hidden. */
+    padding: 12px 15px 76px;
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -36,4 +34,20 @@
     text-align: center;
     padding: 24px;
     color: var(--framer-color-text-tertiary);
+}
+
+/* Floats over the bottom of the scrolling list. The container itself is click-through
+   (so the faded area doesn't eat scroll/clicks) — only the button inside it is not. */
+.preset-list-footer {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 14px 15px 15px;
+    background: linear-gradient(to top, var(--framer-color-bg) 55%, transparent);
+    pointer-events: none;
+}
+
+.preset-list-footer > * {
+    pointer-events: auto;
 }

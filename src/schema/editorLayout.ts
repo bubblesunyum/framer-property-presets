@@ -12,17 +12,19 @@ export type EditorRow =
 
 export const EDITOR_ROWS: Record<PropertyGroup, EditorRow[]> = {
     // top/right/bottom/left are rendered separately as the pin-cross layout, not
-    // through this generic row list — see PresetEditor's position-cross block.
+    // through this generic row list — see PropertySections' PositionSection.
     position: ["position"],
-    size: [{ columns: [["width", "minWidth", "maxWidth"], ["height", "minHeight", "maxHeight"]] }],
+    // Size is rendered explicitly by PropertySections' SizeSection (Width/Height above a
+    // collapsible Min/Max accordion), not through this generic list.
+    size: [],
     layout: [
         // Direction is folded into the Flow control itself (Row/Column) — not a
-        // separate row here. Order matches the explicit gap/padding/distribute/
-        // align/wrap grouping requested for whenever Flow isn't "None".
+        // separate row here. Distribute + Align are folded into one alignment grid
+        // (the single "stackAlignment" row below).
         "layout",
         "gap",
         "padding",
-        ["stackDistribution", "stackAlignment"],
+        "stackAlignment",
         "stackWrapEnabled",
         ["gridColumnCount", "gridRowCount"],
         "gridAlignment",

@@ -42,12 +42,12 @@
 }
 
 .segmented-option.is-active {
-    background: var(--framer-color-tint);
-    color: var(--framer-color-text-reversed);
-    box-shadow: 0 0 12px var(--framer-color-tint-dimmed);
+    background: var(--control-selected-bg);
+    color: var(--control-selected-fg);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
 }
 
 .segmented-option.is-active:hover {
-    background: var(--framer-color-tint);
-    color: var(--framer-color-text-reversed);
+    background: var(--control-selected-bg);
+    color: var(--control-selected-fg);
 }
