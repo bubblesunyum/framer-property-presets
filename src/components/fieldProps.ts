@@ -85,6 +85,9 @@ export function buildFieldProps(key: PresetPropertyKey, config: FieldPropsConfig
         for (const defKey of Object.keys(defaults) as PresetPropertyKey[]) {
           if (!Object.prototype.hasOwnProperty.call(config.properties, defKey)) changes[defKey] = defaults[defKey]
         }
+        // Seed a default gap when a layer first gains a flow (gap only becomes relevant
+        // then) — leave any gap it already has untouched.
+        if (config.properties.gap == null) changes.gap = '8px'
         config.commit(changes)
       },
       onToggleIncluded,

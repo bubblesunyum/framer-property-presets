@@ -1,6 +1,6 @@
 import {useState, type ReactNode} from 'react'
 import {EDITOR_ROWS, type EditorRow} from '../schema/editorLayout'
-import type {PresetPropertyKey, PropertyGroup} from '../types/preset'
+import type {PresetPropertyKey} from '../types/preset'
 import {PinWidget} from './PinWidget'
 import './PropertySections.css'
 import {
@@ -8,29 +8,21 @@ import {
   PropertyControlOnly,
   PropertyFieldPair,
   PropertyRow,
+  renderControl,
   type FieldProps,
 } from './PropertyRow'
 
 type FieldPropsFor = (key: PresetPropertyKey) => FieldProps | null
 
-const GROUPS: {key: PropertyGroup; title: string}[] = [
-  {key: 'position', title: 'Position'},
-  {key: 'size', title: 'Size'},
-  {key: 'layout', title: 'Layout'},
-]
-
-/** Renders the full Position/Size/Layout property form for a single node's draft.
- *  Shared verbatim between the preset editor and the live Design panel — the only
- *  thing that differs between the two is the `fieldProps` builder they hand in (which
- *  decides where a change goes and whether include/exclude toggles are shown). */
+/** Renders the full property form for a single node's draft — one combined Position &
+ *  Size section (position control + conditional pin cross + Width/Height axes) plus the
+ *  Layout section. Shared verbatim between the preset editor and the live Design panel;
+ *  the only difference is the `fieldProps` builder each hands in. */
 export function PropertySections({fieldProps}: {fieldProps: FieldPropsFor}) {
   return (
     <>
-      {GROUPS.map(({key, title}) => {
-        if (key === 'position') return <PositionSection key={key} title={title} fieldProps={fieldProps} />
-        if (key === 'size') return <SizeSection key={key} title={title} fieldProps={fieldProps} />
-        return <GenericSection key={key} title={title} rows={EDITOR_ROWS[key]} fieldProps={fieldProps} />
-      })}
+      <PositionSizeSection fieldProps={fieldProps} />
+      <LayoutSection fieldProps={fieldProps} />
     </>
   )
 }
@@ -49,27 +41,27 @@ function Section({title, isEmpty, children}: {title: string; isEmpty: boolean; c
   )
 }
 
-function GenericSection({title, rows, fieldProps}: {title: string; rows: EditorRow[]; fieldProps: FieldPropsFor}) {
-  const rendered = renderRows(rows, fieldProps)
-  return (
-    <Section title={title} isEmpty={rendered.length === 0}>
-      {rendered}
-    </Section>
-  )
-}
-
-function PositionSection({title, fieldProps}: {title: string; fieldProps: FieldPropsFor}) {
+function PositionSizeSection({fieldProps}: {fieldProps: FieldPropsFor}) {
+  const position = fieldProps('position')
+  // The pin cross only applies once a layer is out of normal flow (any position mode
+  // other than "relative"). The pin keys are always captured, so switching modes here
+  // reveals/hides the cross without needing to backfill anything.
+  const isPinned = position != null && position.value !== 'relative' && position.value != null
   const pins = {
-    top: fieldProps('top'),
-    right: fieldProps('right'),
-    bottom: fieldProps('bottom'),
-    left: fieldProps('left'),
+    top: isPinned ? fieldProps('top') : null,
+    right: isPinned ? fieldProps('right') : null,
+    bottom: isPinned ? fieldProps('bottom') : null,
+    left: isPinned ? fieldProps('left') : null,
   }
   const hasPins = Boolean(pins.top || pins.right || pins.bottom || pins.left)
-  const rows = renderRows(EDITOR_ROWS.position, fieldProps)
+
+  const width = fieldProps('width')
+  const height = fieldProps('height')
+  const hasSize = Boolean(width || height)
 
   return (
-    <Section title={title} isEmpty={!hasPins && rows.length === 0}>
+    <Section title='Position & Size' isEmpty={!position && !hasPins && !hasSize}>
+      {position && <FullWidthControl field={position} />}
       {hasPins && (
         <div className='position-cross'>
           {pins.top && (
@@ -94,42 +86,82 @@ function PositionSection({title, fieldProps}: {title: string; fieldProps: FieldP
           )}
         </div>
       )}
+      {hasSize && (
+        <div className='size-axes'>
+          <SizeAxis main={width} min={fieldProps('minWidth')} max={fieldProps('maxWidth')} />
+          <SizeAxis main={height} min={fieldProps('minHeight')} max={fieldProps('maxHeight')} />
+        </div>
+      )}
+    </Section>
+  )
+}
+
+/** One dimension column: the Width/Height field, with its own Min/Max fields tucked
+ *  behind a small "min/max" expander directly underneath. */
+function SizeAxis({main, min, max}: {main: FieldProps | null; min: FieldProps | null; max: FieldProps | null}) {
+  const [open, setOpen] = useState(false)
+  if (!main) return null
+  const hasMinMax = Boolean(min || max)
+
+  return (
+    <div className='size-axis'>
+      <label
+        className={main.onToggleIncluded ? 'mini-field-label is-toggleable' : 'mini-field-label'}
+        onClick={main.onToggleIncluded}
+      >
+        {main.descriptor.label}
+      </label>
+      <div className={main.included ? 'size-axis-field is-included' : 'size-axis-field'}>
+        {renderControl(main.descriptor, main.value, main.onChange)}
+      </div>
+      {hasMinMax && (
+        <>
+          <button
+            type='button'
+            className='size-constraints-toggle'
+            aria-expanded={open}
+            onClick={() => setOpen((prev) => !prev)}
+          >
+            <ChevronIcon />
+            min/max
+          </button>
+          {open && (
+            <div className='size-axis-minmax'>
+              {min && <MinMaxField label='Min' field={min} />}
+              {max && <MinMaxField label='Max' field={max} />}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
+function MinMaxField({label, field}: {label: string; field: FieldProps}) {
+  return (
+    <div className={field.included ? 'mini-field is-included' : 'mini-field'}>
+      <label className='mini-field-label'>{label}</label>
+      {renderControl(field.descriptor, field.value, field.onChange)}
+    </div>
+  )
+}
+
+function LayoutSection({fieldProps}: {fieldProps: FieldPropsFor}) {
+  const rows = renderRows(EDITOR_ROWS.layout, fieldProps)
+  return (
+    <Section title='Layout' isEmpty={rows.length === 0}>
       {rows}
     </Section>
   )
 }
 
-/** Width/Height always show; Min/Max sit behind a small accordion underneath so the
- *  section stays compact until the constraints are actually wanted. */
-function SizeSection({title, fieldProps}: {title: string; fieldProps: FieldPropsFor}) {
-  const [showConstraints, setShowConstraints] = useState(false)
-
-  const primaryLeft = present([fieldProps('width')])
-  const primaryRight = present([fieldProps('height')])
-  const constraintLeft = present([fieldProps('minWidth'), fieldProps('maxWidth')])
-  const constraintRight = present([fieldProps('minHeight'), fieldProps('maxHeight')])
-
-  const hasPrimary = primaryLeft.length > 0 || primaryRight.length > 0
-  const hasConstraints = constraintLeft.length > 0 || constraintRight.length > 0
-
+/** A control that spans the whole row with no label column (Flow, Position) — its icons
+ *  carry the meaning. Dims when excluded, same as a labelled row. */
+function FullWidthControl({field}: {field: FieldProps}) {
   return (
-    <Section title={title} isEmpty={!hasPrimary && !hasConstraints}>
-      {hasPrimary && <PropertyColumnPair left={primaryLeft} right={primaryRight} />}
-      {hasConstraints && (
-        <>
-          <button
-            type='button'
-            className='size-constraints-toggle'
-            aria-expanded={showConstraints}
-            onClick={() => setShowConstraints((open) => !open)}
-          >
-            <ChevronIcon />
-            {showConstraints ? 'Hide min & max' : 'Min & max'}
-          </button>
-          {showConstraints && <PropertyColumnPair left={constraintLeft} right={constraintRight} />}
-        </>
-      )}
-    </Section>
+    <div className={field.included ? 'property-fullwidth is-included' : 'property-fullwidth'}>
+      {renderControl(field.descriptor, field.value, field.onChange)}
+    </div>
   )
 }
 
@@ -166,7 +198,13 @@ function renderRows(rows: readonly EditorRow[], fieldProps: FieldPropsFor): Reac
     })
     .filter((row): row is RenderedRow => row !== null)
     .map((row, index) => {
-      if ('solo' in row) return <PropertyRow key={index} {...row.solo} />
+      if ('solo' in row) {
+        return row.solo.descriptor.fullWidth ? (
+          <FullWidthControl key={index} field={row.solo} />
+        ) : (
+          <PropertyRow key={index} {...row.solo} />
+        )
+      }
       if ('pair' in row) return <PropertyFieldPair key={index} left={row.pair[0]} right={row.pair[1]} />
       return <PropertyColumnPair key={index} left={row.columns[0]} right={row.columns[1]} />
     })

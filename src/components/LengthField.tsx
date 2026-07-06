@@ -38,23 +38,28 @@ function serializeLength(mode: LengthMode, amount: number | null): string {
   return `${amount ?? (mode === 'fr' ? 1 : 0)}${mode}`
 }
 
-/** Width/height-style field: a numeric amount above a mode picker, matching Framer's
- *  own Size panel fields (a fixed pixel value, a percentage relative to the parent,
- *  hugging content, or filling available space via a flex fraction). The mode picker
- *  is an always-visible segmented control rather than a dropdown, so all its options
- *  are one click away instead of hidden behind an open/close step. */
+/** Width/height-style field: one connected control with the numeric value on top,
+ *  a thin divider, and the mode picker (Fill / Fit / % / px) below — matching Framer's
+ *  own Size field, where the value and its unit read together ("375px") and every mode
+ *  is one click away. "Fit" has no numeric value, so the value row (and divider) drop
+ *  out for it, leaving just the picker. */
 export function LengthField({value, onChange, constrained}: LengthFieldProps) {
   const parsed = parseLength(value)
+  const hasValue = parsed.mode !== 'fit-content'
 
   return (
     <div className='length-field'>
-      {parsed.mode !== 'fit-content' && (
-        <NumberField
-          value={parsed.amount}
-          unit={parsed.mode}
-          onChange={(amount) => onChange(serializeLength(parsed.mode, amount))}
-        />
+      {hasValue && (
+        <div className='length-field-value'>
+          <NumberField
+            value={parsed.amount}
+            unit={parsed.mode}
+            inlineUnit
+            onChange={(amount) => onChange(serializeLength(parsed.mode, amount))}
+          />
+        </div>
       )}
+      {hasValue && <div className='length-field-divider' />}
       <SegmentedControl
         value={parsed.mode}
         options={constrained ? CONSTRAINT_MODE_OPTIONS : SIZE_MODE_OPTIONS}

@@ -11,16 +11,16 @@ export type EditorRow =
     | { readonly columns: readonly [readonly PresetPropertyKey[], readonly PresetPropertyKey[]] }
 
 export const EDITOR_ROWS: Record<PropertyGroup, EditorRow[]> = {
-    // top/right/bottom/left are rendered separately as the pin-cross layout, not
-    // through this generic row list — see PropertySections' PositionSection.
-    position: ["position"],
-    // Size is rendered explicitly by PropertySections' SizeSection (Width/Height above a
-    // collapsible Min/Max accordion), not through this generic list.
+    // Position & Size are rendered explicitly by PropertySections (the position
+    // segmented control + conditional pin cross, then the Width/Height axes with their
+    // own Min/Max expanders) — not through this generic row list.
+    position: [],
     size: [],
     layout: [
-        // Direction is folded into the Flow control itself (Row/Column) — not a
-        // separate row here. Distribute + Align are folded into one alignment grid
-        // (the single "stackAlignment" row below).
+        // Clip Content sits first so it never moves as Flow-specific rows appear/
+        // disappear below it. Direction is folded into the Flow control (Row/Column);
+        // Distribute + Align are folded into one alignment grid ("stackAlignment").
+        "overflow",
         "layout",
         "gap",
         "padding",
@@ -33,8 +33,5 @@ export const EDITOR_ROWS: Record<PropertyGroup, EditorRow[]> = {
         "gridColumnMinWidth",
         "gridRowHeightType",
         "gridRowHeight",
-        // Not layout-type-specific (visible regardless of Flow) — placed last to match
-        // where Framer's own panel shows it, right after Padding.
-        "overflow",
     ],
 }

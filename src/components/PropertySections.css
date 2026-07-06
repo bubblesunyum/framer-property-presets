@@ -31,6 +31,17 @@
     padding: 0 15px;
 }
 
+/* Full-width, label-less control (Position, Flow). */
+.property-fullwidth {
+    padding: 0 15px;
+    opacity: 0.5;
+    transition: opacity 0.15s;
+}
+
+.property-fullwidth.is-included {
+    opacity: 1;
+}
+
 .position-cross {
     display: flex;
     flex-direction: column;
@@ -56,6 +67,37 @@
     min-width: 0;
 }
 
+/* Width / Height side by side, each its own column with a Min/Max expander. */
+.size-axes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 0 15px;
+    align-items: start;
+}
+
+.size-axis {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.size-axis-field {
+    opacity: 0.5;
+    transition: opacity 0.15s;
+}
+
+.size-axis-field.is-included {
+    opacity: 1;
+}
+
+.size-axis-minmax {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
 .size-constraints-toggle {
     display: flex;
     align-items: center;
@@ -63,7 +105,7 @@
     align-self: flex-start;
     height: auto;
     min-height: 0;
-    margin: -2px 15px 0;
+    margin: 0;
     padding: 2px 0;
     background: none;
     border: none;

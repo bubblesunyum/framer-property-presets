@@ -8,7 +8,11 @@
 }
 
 .number-field-input.has-unit {
-    padding-right: 20px;
+    padding-right: 18px;
+}
+
+.number-field-input.has-left {
+    padding-left: 16px;
 }
 
 .number-field-unit {
@@ -19,4 +23,43 @@
     font-size: 10px;
     color: var(--framer-color-text-tertiary);
     pointer-events: none;
+}
+
+.number-field-side {
+    position: absolute;
+    left: 7px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 10px;
+    color: var(--framer-color-text-tertiary);
+    pointer-events: none;
+}
+
+/* Inline-unit mode: the field hugs its content so the value and unit read together
+   ("375px"), left-aligned, rather than the unit floating at the far right edge. */
+.number-field.is-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
+    width: auto;
+    /* Cap at ~6 chars + unit + right padding so Width/Height/Gap don't stretch wide;
+       a min keeps a short value ("8px") from collapsing to an untappable sliver. */
+    min-width: 46px;
+    max-width: 82px;
+}
+
+.number-field.is-inline .number-field-input {
+    width: auto;
+    min-width: 1ch;
+    padding-left: 8px;
+    padding-right: 0;
+    text-align: left;
+}
+
+.number-field-unit.is-inline {
+    position: static;
+    right: auto;
+    transform: none;
+    font-size: 11px;
+    padding-right: 8px;
 }

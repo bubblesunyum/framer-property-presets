@@ -49,6 +49,47 @@ function FlowIcon({ value }: { value: string }) {
     )
 }
 
+function PositionIcon({ value }: { value: string }) {
+    if (value === "absolute") {
+        return (
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.2" opacity="0.4" />
+                <path d="M5 2.5v3.5M2.5 5h3.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                <circle cx="5" cy="5" r="1.6" fill="currentColor" />
+            </svg>
+        )
+    }
+    if (value === "fixed") {
+        return (
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.2" />
+                <circle cx="8" cy="8" r="2.2" fill="currentColor" />
+            </svg>
+        )
+    }
+    if (value === "sticky") {
+        return (
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <rect x="2.5" y="2.5" width="11" height="2.4" rx="1" fill="currentColor" />
+                <path
+                    d="M8 13.5V7M8 7 5.6 9.4M8 7l2.4 2.4"
+                    stroke="currentColor"
+                    strokeWidth="1.3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                />
+            </svg>
+        )
+    }
+    // relative — nested inside its parent's flow
+    return (
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.2" opacity="0.5" />
+            <rect x="4.5" y="4.5" width="4.5" height="4.5" rx="1" fill="currentColor" />
+        </svg>
+    )
+}
+
 function DirectionIcon({ value }: { value: string }) {
     return value === "vertical" ? (
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -112,6 +153,7 @@ function Icon({ iconSet, value }: { iconSet: NonNullable<SegmentedControlProps["
     if (iconSet === "direction") return <DirectionIcon value={value} />
     if (iconSet === "alignment") return <AlignmentIcon value={value} />
     if (iconSet === "flow") return <FlowIcon value={value} />
+    if (iconSet === "position") return <PositionIcon value={value} />
     return <DistributionIcon value={value} />
 }
 

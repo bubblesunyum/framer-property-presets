@@ -1,6 +1,37 @@
+/* One connected surface holding the value row + a thin divider + the mode picker. */
 .length-field {
     display: flex;
     flex-direction: column;
-    gap: 6px;
     width: 100%;
+    background: var(--framer-color-bg-tertiary);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.length-field-value {
+    display: flex;
+    align-items: center;
+    min-height: 30px;
+}
+
+/* The value input is bare inside the shared box — no field chrome of its own. */
+.length-field-value .number-field-input {
+    background: transparent;
+    box-shadow: none;
+    height: 28px;
+}
+
+.length-field-divider {
+    height: 1px;
+    background: var(--framer-color-divider);
+}
+
+/* The picker sits directly on the box surface — drop its own track background and
+   rounding so the box reads as a single control. The active pill still shows via
+   --control-selected-bg. */
+.length-field .segmented-control {
+    background: transparent;
+    border-radius: 0;
+    padding: 3px;
+    height: 30px;
 }

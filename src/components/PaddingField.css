@@ -1,6 +1,6 @@
 .padding-field {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 6px;
     width: 100%;
 }
@@ -15,8 +15,8 @@
 }
 
 .padding-field-toggle {
-    width: 26px;
-    height: 26px;
+    width: 30px;
+    height: 30px;
     flex-shrink: 0;
     background: var(--framer-color-bg-tertiary);
     color: var(--framer-color-text-tertiary);

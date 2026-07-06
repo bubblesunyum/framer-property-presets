@@ -33,13 +33,16 @@ function parseNumeric(raw: unknown): number | null {
     return null
 }
 
-function renderControl(descriptor: PropertyDescriptor, value: unknown, onChange: (value: unknown) => void) {
+export function renderControl(descriptor: PropertyDescriptor, value: unknown, onChange: (value: unknown) => void) {
     switch (descriptor.control) {
         case "dimension":
             return (
                 <NumberField
                     value={parseNumeric(value)}
                     unit={descriptor.displaySuffix ?? descriptor.unit}
+                    // A displaySuffix is a side label (T/L/…) that stays pinned right; a
+                    // plain unit (gap's "px") reads inline right after the value ("8px").
+                    inlineUnit={!descriptor.displaySuffix}
                     onChange={(next) => onChange(`${next}${descriptor.unit}`)}
                 />
             )
@@ -80,6 +83,8 @@ function renderControl(descriptor: PropertyDescriptor, value: unknown, onChange:
                     onChange={(checked) => onChange(checked ? "hidden" : "visible")}
                 />
             )
+        case "toggle":
+            return <ToggleSwitch checked={Boolean(value)} onChange={onChange} />
         case "yes-no":
             return (
                 <SegmentedControl
@@ -121,8 +126,13 @@ function renderControl(descriptor: PropertyDescriptor, value: unknown, onChange:
  *  don't naturally pair with a neighbor. Dims when not (yet) included, rather than
  *  showing a separate include/exclude checkbox. */
 export function PropertyRow({ descriptor, value, included, onChange, onToggleIncluded }: FieldProps) {
+    // Padding can grow taller when expanded to four sides — top-align the row so its
+    // label and the control's expand button don't drift down as it opens/closes.
+    const classes = ["row", "property-row"]
+    if (included) classes.push("is-included")
+    if (descriptor.control === "padding") classes.push("is-top")
     return (
-        <div className={included ? "row property-row is-included" : "row property-row"}>
+        <div className={classes.join(" ")}>
             <label
                 className={onToggleIncluded ? "property-row-label is-toggleable" : "property-row-label"}
                 onClick={onToggleIncluded}

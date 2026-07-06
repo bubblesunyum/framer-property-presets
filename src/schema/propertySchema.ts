@@ -11,7 +11,7 @@ import {
 } from 'framer-plugin'
 import type {PresetProperties, PresetPropertyKey, PropertyGroup} from '../types/preset'
 
-export type IconSet = 'direction' | 'alignment' | 'distribution' | 'flow'
+export type IconSet = 'direction' | 'alignment' | 'distribution' | 'flow' | 'position'
 
 interface BaseDescriptor {
   key: PresetPropertyKey
@@ -23,6 +23,9 @@ interface BaseDescriptor {
   /** Further narrows visibility using already-captured/edited sibling values, e.g.
    *  stack-only fields only when `layout === "stack"`. Checked in addition to `guard`. */
   visibleWhen?: (properties: PresetProperties) => boolean
+  /** Render the control spanning the full row with no label column — for controls
+   *  whose meaning is self-evident from their icons (Flow, Position). */
+  fullWidth?: boolean
 }
 
 export interface DimensionDescriptor extends BaseDescriptor {
@@ -80,6 +83,12 @@ export interface YesNoDescriptor extends BaseDescriptor {
   control: 'yes-no'
 }
 
+/** Plain boolean rendered as a sliding on/off pill (ToggleSwitch), same visual as Clip
+ *  Content — for true booleans like Wrap (unlike clip-toggle, which maps an enum). */
+export interface ToggleDescriptor extends BaseDescriptor {
+  control: 'toggle'
+}
+
 /** Combined distribute + align control: a single 3×3 grid that writes both
  *  `stackDistribution` (main axis) and `stackAlignment` (cross axis) at once — see
  *  AlignmentGrid and the `stackAlignment` composite in buildFieldProps. */
@@ -118,6 +127,7 @@ export type PropertyDescriptor =
   | BooleanDescriptor
   | ClipToggleDescriptor
   | YesNoDescriptor
+  | ToggleDescriptor
   | AlignGridDescriptor
   | SelectDescriptor
   | SegmentedDescriptor
@@ -130,6 +140,21 @@ const hasLayout = (properties: PresetProperties) => properties.layout != null
 
 export const PROPERTY_SCHEMA: PropertyDescriptor[] = [
   // ---- Position ----
+  {
+    key: 'position',
+    group: 'position',
+    label: 'Position',
+    control: 'segmented',
+    iconSet: 'position',
+    fullWidth: true,
+    guard: supportsPosition,
+    options: [
+      {value: 'relative', label: 'Relative'},
+      {value: 'absolute', label: 'Absolute'},
+      {value: 'fixed', label: 'Fixed'},
+      {value: 'sticky', label: 'Sticky'},
+    ],
+  },
   {
     key: 'top',
     group: 'position',
@@ -169,20 +194,6 @@ export const PROPERTY_SCHEMA: PropertyDescriptor[] = [
     displaySuffix: 'L',
     nullable: true,
     guard: supportsPins,
-  },
-  {
-    key: 'position',
-    group: 'position',
-    label: 'Type',
-    control: 'select',
-    nullable: false,
-    guard: supportsPosition,
-    options: [
-      {value: 'relative', label: 'Relative', shortLabel: 'Rel'},
-      {value: 'absolute', label: 'Absolute'},
-      {value: 'fixed', label: 'Fixed'},
-      {value: 'sticky', label: 'Sticky'},
-    ],
   },
 
   // ---- Size ----
@@ -228,6 +239,7 @@ export const PROPERTY_SCHEMA: PropertyDescriptor[] = [
     label: 'Flow',
     control: 'segmented',
     iconSet: 'flow',
+    fullWidth: true,
     guard: supportsLayout,
     // The underlying `layout`/`stackDirection` mapping (row = stack+horizontal,
     // column = stack+vertical) is handled specially in PresetEditor's fieldProps —
@@ -311,7 +323,7 @@ export const PROPERTY_SCHEMA: PropertyDescriptor[] = [
     key: 'stackWrapEnabled',
     group: 'layout',
     label: 'Wrap',
-    control: 'yes-no',
+    control: 'toggle',
     guard: hasStackLayout,
     visibleWhen: isStack,
   },

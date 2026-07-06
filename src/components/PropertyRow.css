@@ -19,6 +19,18 @@
     opacity: 1;
 }
 
+/* Top-aligned variant (padding): keep the label pinned level with the first control
+   row instead of centering in a growing row. */
+.property-row.is-top {
+    align-items: start;
+}
+
+.property-row.is-top .property-row-label {
+    height: 30px;
+    display: flex;
+    align-items: center;
+}
+
 .property-row-label {
     color: var(--framer-color-text-secondary);
     font-size: 12px;
