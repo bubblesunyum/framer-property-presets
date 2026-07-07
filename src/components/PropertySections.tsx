@@ -84,27 +84,21 @@ function PositionAndSize({fieldProps}: {fieldProps: FieldPropsFor}) {
     <>
       {position && <FullWidthControl field={position} />}
       {hasPins && (
-        <div className='position-cross'>
-          {pins.top && (
-            <div className='position-cross-top'>
-              <PropertyControlOnly {...pins.top} />
-            </div>
-          )}
-          <div className='position-cross-middle'>
+        <div className='position-pins'>
+          <PinWidget
+            top={pins.top?.value != null}
+            right={pins.right?.value != null}
+            bottom={pins.bottom?.value != null}
+            left={pins.left?.value != null}
+          />
+          {/* 2×2 grid to the right of the widget — Left/Top on top, Right/Bottom below,
+              matching the reference layout. */}
+          <div className='position-pins-grid'>
             {pins.left && <PropertyControlOnly {...pins.left} />}
-            <PinWidget
-              top={pins.top?.value != null}
-              right={pins.right?.value != null}
-              bottom={pins.bottom?.value != null}
-              left={pins.left?.value != null}
-            />
+            {pins.top && <PropertyControlOnly {...pins.top} />}
             {pins.right && <PropertyControlOnly {...pins.right} />}
+            {pins.bottom && <PropertyControlOnly {...pins.bottom} />}
           </div>
-          {pins.bottom && (
-            <div className='position-cross-bottom'>
-              <PropertyControlOnly {...pins.bottom} />
-            </div>
-          )}
         </div>
       )}
       {hasSize && <SizeAxes width={width} height={height} fieldProps={fieldProps} />}
@@ -115,7 +109,15 @@ function PositionAndSize({fieldProps}: {fieldProps: FieldPropsFor}) {
 /** "Dimensions" heading (with the aspect-ratio lock toggle at its far right) above
  *  Width and Height side by side — when locked, editing one proportionally scales the
  *  other to hold the ratio captured at the moment it was locked. */
-function SizeAxes({width, height, fieldProps}: {width: FieldProps | null; height: FieldProps | null; fieldProps: FieldPropsFor}) {
+function SizeAxes({
+  width,
+  height,
+  fieldProps,
+}: {
+  width: FieldProps | null
+  height: FieldProps | null
+  fieldProps: FieldPropsFor
+}) {
   const [locked, setLocked] = useState(false)
   const [lockedRatio, setLockedRatio] = useState<number | null>(null)
 
@@ -160,16 +162,22 @@ function SizeAxes({width, height, fieldProps}: {width: FieldProps | null; height
     },
   }
 
-  const [openAxis, setOpenAxis] = useState<'width' | 'height' | null>(null)
+  // Each axis's Min/Max expands independently, so both can be open at once — their
+  // fields sit under their own axis's column, all four in one row, never wider than
+  // the Width/Height row above.
+  const [openAxes, setOpenAxes] = useState({width: false, height: false})
+  const toggleAxis = (axis: 'width' | 'height') => setOpenAxes((prev) => ({...prev, [axis]: !prev[axis]}))
   const minWidth = fieldProps('minWidth')
   const maxWidth = fieldProps('maxWidth')
   const minHeight = fieldProps('minHeight')
   const maxHeight = fieldProps('maxHeight')
+  const widthOpen = openAxes.width && Boolean(minWidth || maxWidth)
+  const heightOpen = openAxes.height && Boolean(minHeight || maxHeight)
 
   return (
     <div className='dimensions'>
       <div className='dimensions-header'>
-        <h4 className='dimensions-header-title'>Dimensions</h4>
+        <h4 className='dimensions-header-title'>Size</h4>
         <button
           type='button'
           className={locked ? 'size-axes-lock is-locked' : 'size-axes-lock'}
@@ -186,58 +194,46 @@ function SizeAxes({width, height, fieldProps}: {width: FieldProps | null; height
           leftLabel='W'
           main={linkedWidth}
           hasMinMax={Boolean(minWidth || maxWidth)}
-          open={openAxis === 'width'}
-          onToggleOpen={() => setOpenAxis((prev) => (prev === 'width' ? null : 'width'))}
+          open={openAxes.width}
+          onToggleOpen={() => toggleAxis('width')}
         />
         <SizeAxis
           axis='height'
           leftLabel='H'
           main={linkedHeight}
           hasMinMax={Boolean(minHeight || maxHeight)}
-          open={openAxis === 'height'}
-          onToggleOpen={() => setOpenAxis((prev) => (prev === 'height' ? null : 'height'))}
+          open={openAxes.height}
+          onToggleOpen={() => toggleAxis('height')}
         />
       </div>
-      {/* Spans the full row width (not confined to just one axis's own half-column) —
-          there's plenty of room for two comfortably-sized boxes here, unlike squeezing
-          them into half of an already-narrow column. */}
-      {openAxis === 'width' && (minWidth || maxWidth) && (
-        <div className='size-axis-minmax'>
-          {minWidth && <MinMaxField label='Min' field={minWidth} axis='width' />}
-          {maxWidth && <MinMaxField label='Max' field={maxWidth} axis='width' />}
-        </div>
-      )}
-      {openAxis === 'height' && (minHeight || maxHeight) && (
-        <div className='size-axis-minmax'>
-          {minHeight && <MinMaxField label='Min' field={minHeight} axis='height' />}
-          {maxHeight && <MinMaxField label='Max' field={maxHeight} axis='height' />}
+      {(widthOpen || heightOpen) && (
+        <div className='size-axes'>
+          <div className='size-axis-minmax'>
+            {widthOpen && minWidth && <MinMaxField label='Min' field={minWidth} axis='width' />}
+            {widthOpen && maxWidth && <MinMaxField label='Max' field={maxWidth} axis='width' />}
+          </div>
+          <div className='size-axis-minmax'>
+            {heightOpen && minHeight && <MinMaxField label='Min' field={minHeight} axis='height' />}
+            {heightOpen && maxHeight && <MinMaxField label='Max' field={maxHeight} axis='height' />}
+          </div>
         </div>
       )}
     </div>
   )
 }
 
+/** Horizontal chain-link — two link ends joined by a middle bar, laid out left-to-right.
+ *  Same glyph whether locked or not; the locked state is conveyed by color (its button
+ *  gets `.is-locked`), and unlocked dims to 0.55 to read as "off". */
 function LinkIcon({locked}: {locked: boolean}) {
-  if (locked) {
-    return (
-      <svg width='13' height='13' viewBox='0 0 13 13' fill='none'>
-        <path
-          d='M4.5 6.5v-2a2 2 0 1 1 4 0v2M4.5 6.5h4a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1z'
-          stroke='currentColor'
-          strokeWidth='1.2'
-          strokeLinejoin='round'
-        />
-      </svg>
-    )
-  }
   return (
-    <svg width='13' height='13' viewBox='0 0 13 13' fill='none'>
+    <svg width='15' height='15' viewBox='0 0 15 15' fill='none' opacity={locked ? 1 : 0.55}>
       <path
-        d='M4.5 5.2V4.5a2 2 0 1 1 4 0M4.5 6.5h4a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1z'
+        d='M6.3 5H4.6a2.5 2.5 0 0 0 0 5h1.7M8.7 5h1.7a2.5 2.5 0 0 1 0 5H8.7M5 7.5h5'
         stroke='currentColor'
-        strokeWidth='1.2'
+        strokeWidth='1.3'
+        strokeLinecap='round'
         strokeLinejoin='round'
-        opacity='0.55'
       />
     </svg>
   )
@@ -291,6 +287,9 @@ function MinMaxField({label, field, axis}: {label: string; field: FieldProps; ax
         axis={axis}
         constrained
         onChange={field.onChange}
+        // Clearing a Min/Max field unsets the constraint (commits null) rather than
+        // snapping back to its old value.
+        onClear={() => field.onChange(null)}
       />
     </div>
   )
@@ -393,19 +392,85 @@ function FullWidthControl({field}: {field: FieldProps}) {
   )
 }
 
+/** Flow's segmented control, with the Wrap toggle as a separate small button at the end
+ *  of the same row — visually distinct from the segmented control (its own background,
+ *  4px gap) rather than one of its options, since Wrap isn't a Flow value. Only shown
+ *  once the layer actually has a stack (Wrap doesn't apply to None/Grid). */
+function FlowWrapRow({flow, wrap}: {flow: FieldProps; wrap: FieldProps | null}) {
+  const showLabel = 'labelAbove' in flow.descriptor && flow.descriptor.labelAbove
+  const wrapEnabled = Boolean(wrap?.value)
+  return (
+    <div className={flow.included ? 'property-fullwidth is-included' : 'property-fullwidth'}>
+      {showLabel && <h4 className='property-fullwidth-label'>{flow.descriptor.label}</h4>}
+      <div className='flow-wrap-row'>
+        <div className='flow-wrap-row-control'>{renderControl(flow.descriptor, flow.value, flow.onChange)}</div>
+        {wrap && (
+          <button
+            type='button'
+            className={wrapEnabled ? 'flow-wrap-toggle is-active' : 'flow-wrap-toggle'}
+            onClick={() => wrap.onChange(!wrapEnabled)}
+            title={wrapEnabled ? 'Wrap: on' : 'Wrap: off'}
+            aria-label={wrapEnabled ? 'Disable wrap' : 'Enable wrap'}
+          >
+            <WrapIcon />
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/** Alignment grid + Z-Index side by side in one row: the square grid (with its own label
+ *  above) on the left, the vertical Z-Index stack (its own label above) on the right.
+ *  Either half can be absent — a non-stack node has no alignment grid; a node without
+ *  z-index support has no Z-Index — in which case the present one just sits alone. */
+function AlignmentZIndexRow({alignment, zIndex}: {alignment: FieldProps | null; zIndex: FieldProps | null}) {
+  if (!alignment && !zIndex) return null
+  return (
+    <div className='alignment-zindex-row'>
+      {alignment && (
+        <div className={alignment.included ? 'alignment-block is-included' : 'alignment-block'}>
+          <h4 className='property-fullwidth-label'>{alignment.descriptor.label}</h4>
+          {renderControl(alignment.descriptor, alignment.value, alignment.onChange)}
+        </div>
+      )}
+      {zIndex && (
+        <div className={zIndex.included ? 'zindex-block is-included' : 'zindex-block'}>
+          <h4 className='property-fullwidth-label'>{zIndex.descriptor.label}</h4>
+          {renderControl(zIndex.descriptor, zIndex.value, zIndex.onChange)}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function WrapIcon() {
+  return (
+    <svg width='14' height='14' viewBox='0 0 14 14' fill='none'>
+      <path
+        d='M1.5 4h8.5a2 2 0 0 1 0 4H7M1.5 4l2.2-2M1.5 4l2.2 2M1.5 10h8.5a2 2 0 0 0 0-4'
+        stroke='currentColor'
+        strokeWidth='1.2'
+        strokeLinecap='round'
+        strokeLinejoin='round'
+      />
+    </svg>
+  )
+}
+
 /** Gap (fixed max-width) beside Padding (fills whatever's left) — see the comment where
  *  this is chosen over the generic equal-halves `PropertyFieldPair`. */
 function GapPaddingRow({gap, padding}: {gap: FieldProps | null; padding: FieldProps | null}) {
   if (!gap && !padding) return null
   return (
-    <div className="gap-padding-row">
+    <div className='gap-padding-row'>
       {gap && (
-        <div className="gap-padding-row-gap">
+        <div className='gap-padding-row-gap'>
           <PropertyMiniField {...gap} />
         </div>
       )}
       {padding && (
-        <div className="gap-padding-row-padding">
+        <div className='gap-padding-row-padding'>
           <PropertyMiniField {...padding} />
         </div>
       )}
@@ -446,11 +511,26 @@ function renderRows(rows: readonly EditorRow[], fieldProps: FieldPropsFor): Reac
         )
       }
       if ('pair' in row) {
+        // Flow's full-width segmented control, plus Wrap as a separate small button at
+        // its end (rather than splitting the row into two equal-width fields, or
+        // treating Wrap as one of Flow's own options).
+        if (row.pair[0]?.descriptor.key === 'layout') {
+          return row.pair[0] ? <FlowWrapRow key={index} flow={row.pair[0]} wrap={row.pair[1]} /> : null
+        }
         // Gap gets a fixed max-width (108px) and Padding fills whatever's left, rather
         // than splitting the row into two equal halves like every other paired row —
         // Padding's own box (2-4 side fields) needs the room, Gap's compact one doesn't.
         if (row.pair[0]?.descriptor.key === 'gap' && row.pair[1]?.descriptor.key === 'padding') {
           return <GapPaddingRow key={index} gap={row.pair[0]} padding={row.pair[1]} />
+        }
+        // Alignment grid + Z-Index share one row. Detected on either half's key since a
+        // non-stack node drops the alignment grid, leaving just Z-Index in the pair.
+        const key0 = row.pair[0]?.descriptor.key
+        const key1 = row.pair[1]?.descriptor.key
+        if (key0 === 'stackAlignment' || key1 === 'zIndex' || key0 === 'zIndex') {
+          const alignment = key0 === 'stackAlignment' ? row.pair[0] : null
+          const zIndex = key1 === 'zIndex' ? row.pair[1] : key0 === 'zIndex' ? row.pair[0] : null
+          return <AlignmentZIndexRow key={index} alignment={alignment} zIndex={zIndex} />
         }
         return <PropertyFieldPair key={index} left={row.pair[0]} right={row.pair[1]} />
       }

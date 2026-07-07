@@ -1,44 +1,75 @@
 .number-field {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    width: 100%;
-    height: 30px;
-    padding: 0 10px;
-    background: var(--framer-color-bg-tertiary);
-    border-radius: 8px;
-    cursor: text;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 100%;
+  min-height: 32px;
+  padding: 0 10px;
+  background: var(--framer-color-bg-tertiary);
+  border-radius: 8px;
+  cursor: text;
+}
+
+/* Dimension-field layout: the value+unit(+unit-button) group floats centered in the
+   field instead of hugging the left edge (the W/H label and min/max caret anchor the
+   edges — see LengthField). The 4px gap separates the unit *button*; the plain unit
+   suffix ("fr") still sits flush against the value via its own -4px pull-back below. */
+.number-field.is-centered {
+  justify-content: center;
+  gap: 4px;
+}
+
+/* The centered variant's 4px flex gap (meant for the unit *button*) would otherwise
+   also open up between the value and its plain unit suffix ("1 fr") — deepen the
+   suffix's pull-back by that same 4px so it stays flush against the digits. */
+.number-field.is-centered .number-field-unit {
+  margin-left: -10px;
 }
 
 .number-field.is-compact {
-    width: auto;
-    /* ~6 characters + unit + the box's own right padding, so Width/Height/Gap/Radius
+  width: auto;
+  /* ~6 characters + unit + the box's own right padding, so Width/Height/Gap/Radius
        don't stretch to fill their row. */
-    min-width: 46px;
-    max-width: 92px;
+  min-width: 46px;
+  max-width: 92px;
+}
+
+/* Drops the clamp above entirely — for a field that's always a short single number
+   with no "comfortable" width of its own (Z-Index), where the clamp only ever added
+   dead space rather than helping anything fit. */
+.number-field.is-compact.is-hug {
+  min-width: 0;
+  max-width: none;
 }
 
 .number-field.is-disabled {
-    cursor: default;
-    opacity: 0.6;
+  cursor: default;
+  opacity: 0.6;
 }
 
 /* An unset value (null) rather than a disabled one — e.g. an unpinned position edge or
    an unset min/max constraint. Lighter dim than disabled since it's still editable. */
 .number-field.is-dim {
-    opacity: 0.55;
+  opacity: 0.55;
 }
 
 .number-field.is-compact.is-dim {
-    opacity: 0.7;
+  opacity: 0.7;
 }
 
 .number-field-label {
-    flex-shrink: 0;
-    margin-right: 6px;
-    font-size: 10px;
-    color: var(--framer-color-text-tertiary);
-    pointer-events: none;
+  flex-shrink: 0;
+  margin-right: 6px;
+  font-size: 10px;
+  color: var(--framer-color-text-tertiary);
+  pointer-events: none;
+}
+
+/* Position pins (Top/Right/Bottom/Left) specifically, once that edge has a real value —
+   mirrors PinWidget's own green for "this edge is pinned", so the reading is consistent
+   between the little cross graphic and the fields around it. */
+.number-field-label.is-accent {
+  color: var(--position-accent);
 }
 
 /* Compound selector deliberately: framer.css's own `input[type="number"]` rule (an
@@ -48,40 +79,45 @@
    silently clipped them. Nesting under `.number-field` beats it without needing
    `!important`. */
 .number-field .number-field-input {
-    flex: 0 1 auto;
-    min-width: 1ch;
-    width: auto;
-    background: transparent;
-    border: none;
-    box-shadow: none;
-    padding: 0;
-    margin: 0;
-    text-align: left;
-    color: var(--framer-color-text);
-    /* Without this, a native number spinner still reserves its own width even though
+  flex: 0 1 auto;
+  min-width: 1ch;
+  width: auto;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+  color: var(--framer-color-text);
+  /* Without this, a native number spinner still reserves its own width even though
        no arrows are visible (the input is sized narrower than that reserved space via
        the ch-based inline width below), which was clipping the last digit or two. */
-    appearance: none;
-    -moz-appearance: textfield;
+  appearance: none;
+  -moz-appearance: textfield;
 }
 
 .number-field .number-field-input::-webkit-outer-spin-button,
 .number-field .number-field-input::-webkit-inner-spin-button {
-    appearance: none;
-    margin: 0;
+  appearance: none;
+  margin: 0;
 }
 
 .number-field-input:disabled {
-    color: var(--framer-color-text-secondary);
-    -webkit-text-fill-color: var(--framer-color-text-secondary);
+  color: var(--framer-color-text-secondary);
+  -webkit-text-fill-color: var(--framer-color-text-secondary);
 }
 
 .number-field-unit {
-    flex-shrink: 0;
-    margin-left: 0;
-    font-size: 11px;
-    /* A bit brighter than the field's other dim text so the unit stays legible next to
+  flex-shrink: 0;
+  /* The input beside this is always `calc(<len>ch + 6px)` wide — that trailing 6px is
+       deliberate room for the cursor/native spinner reservation while editing, but it
+       reads as an ugly gap once the unit sits right after it. Pulling the unit back by
+       the same 6px cancels that buffer visually without touching the buffer itself (so
+       editing safety is unaffected), landing the unit flush against the digit. */
+  margin-left: -6px;
+  font-size: 11px;
+  /* A bit brighter than the field's other dim text so the unit stays legible next to
        the value instead of fading into the background. */
-    color: var(--framer-color-text-secondary);
-    pointer-events: none;
+  color: var(--framer-color-text-secondary);
+  pointer-events: none;
 }

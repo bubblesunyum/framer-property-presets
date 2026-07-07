@@ -1,62 +1,49 @@
+/* Vertical stack of six rectangles with the number field at the bottom. Height is set
+   by its container (the alignment-zindex row) so the stack lines up with the alignment
+   grid beside it. */
 .zindex-field {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    width: 100%;
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  height: 100%;
+  align-items: flex-end;
 }
 
+.zindex-stack {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  /* ~20% narrower than the number field below, which fills the block's full width. */
+  width: 100%;
+  height: 100%;
+  /* align-self: center; */
+}
+
+.zindex-rect {
+  flex: 1;
+  min-height: 0;
+  width: 54px;
+  height: 100%;
+  padding: 0;
+  background: var(--framer-color-bg-tertiary);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.12s;
+}
+
+.zindex-rect:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.zindex-rect.is-selected,
+.zindex-rect.is-selected:hover {
+  background: var(--control-selected-bg);
+}
+
+/* The number field fills the block's width; the rectangles above are the narrower ones. */
 .zindex-field .number-field {
-    flex: 1;
-    min-width: 0;
-}
-
-.zindex-slider {
-    position: relative;
-    flex: 1;
-    min-width: 0;
-    height: 16px;
-    display: flex;
-    align-items: center;
-}
-
-.zindex-slider input[type="range"] {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    background: none;
-    opacity: 0;
-    cursor: ew-resize;
-}
-
-.zindex-slider-dots {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    height: 2px;
-    background: var(--framer-color-bg-tertiary);
-    border-radius: 1px;
-    pointer-events: none;
-}
-
-.zindex-slider-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--framer-color-text-tertiary);
-    transform: translateX(0);
-}
-
-.zindex-slider-dot:first-child {
-    transform: translateX(1px);
-}
-
-.zindex-slider-dot:last-child {
-    transform: translateX(-1px);
-}
-
-.zindex-slider-dot.is-filled {
-    background: var(--control-selected-fg);
+  flex-shrink: 0;
+  width: 100%;
+  justify-content: center;
 }

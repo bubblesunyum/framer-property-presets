@@ -98,15 +98,12 @@ export function buildFieldProps(key: PresetPropertyKey, config: FieldPropsConfig
     }
   }
 
-  // Distribute + Align share one 3×3 grid, writing both stack keys at once; Wrap's
-  // toggle button now lives directly under that same grid, so it's folded into this
-  // composite too rather than having its own row.
+  // Distribute + Align share one 3×3 grid, writing both stack keys at once.
   if (key === 'stackAlignment') {
     const value: AlignmentValue = {
       direction: config.properties.stackDirection === 'horizontal' ? 'horizontal' : 'vertical',
       distribution: (config.properties.stackDistribution as string | null | undefined) ?? null,
       alignment: (config.properties.stackAlignment as string | null | undefined) ?? null,
-      wrapEnabled: Boolean(config.properties.stackWrapEnabled),
     }
     return {
       descriptor,
@@ -114,10 +111,6 @@ export function buildFieldProps(key: PresetPropertyKey, config: FieldPropsConfig
       included,
       onChange: (next) => {
         const change = next as AlignmentChange
-        if ('wrapEnabled' in change) {
-          config.commit({stackWrapEnabled: change.wrapEnabled})
-          return
-        }
         config.commit({stackDistribution: change.distribution, stackAlignment: change.alignment})
       },
       onToggleIncluded,

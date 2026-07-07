@@ -18,13 +18,14 @@ export const EDITOR_ROWS: Record<PropertyGroup, EditorRow[]> = {
     size: [],
     layout: [
         // Direction is folded into the Flow control (Row/Column); Distribute + Align
-        // are folded into one alignment grid ("stackAlignment"). Wrap is folded into a
-        // small toggle button underneath that same grid (see AlignmentGrid) — it no
-        // longer has its own row.
-        "layout",
+        // are folded into one alignment grid ("stackAlignment"). Wrap sits at the end of
+        // Flow's own row as a separate button (see FlowWrapRow in PropertySections.tsx)
+        // rather than having its own row.
+        ["layout", "stackWrapEnabled"],
         ["gap", "padding"],
-        "stackAlignment",
-        "zIndex",
+        // Alignment grid and Z-Index share one row (see AlignmentZIndexRow): the grid on
+        // the left, the vertical Z-Index rectangle stack on the right.
+        ["stackAlignment", "zIndex"],
         ["gridColumnCount", "gridRowCount"],
         "gridAlignment",
         "gridColumnWidthType",

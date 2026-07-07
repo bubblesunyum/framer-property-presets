@@ -5,32 +5,34 @@ const ORDER = ['start', 'center', 'end'] as const
 type Order = (typeof ORDER)[number]
 
 const SPACE_OPTIONS = ['space-between', 'space-around', 'space-evenly'] as const
+const SPACE_LABELS: Record<(typeof SPACE_OPTIONS)[number], string> = {
+  'space-between': 'between',
+  'space-around': 'around',
+  'space-evenly': 'evenly',
+}
 
-/** Value the combined align + distribute grid reads: the two stack keys it writes,
- *  plus the stack direction it needs to know which grid axis maps to which key, plus
- *  Wrap — folded in here too since its toggle button now lives directly under the
- *  grid's caret rather than as its own property row. */
+/** Value the combined align + distribute grid reads: the two stack keys it writes, plus
+ *  the stack direction it needs to know which grid axis maps to which key. */
 export interface AlignmentValue {
   direction: 'horizontal' | 'vertical'
   distribution: string | null
   alignment: string | null
-  wrapEnabled: boolean
 }
 
-export type AlignmentChange = {distribution: string; alignment: string} | {wrapEnabled: boolean}
+export type AlignmentChange = {distribution: string; alignment: string}
 
 interface AlignmentGridProps {
   value: AlignmentValue
   onChange: (next: AlignmentChange) => void
 }
 
-/** Framer-style combined align + distribute picker: a 3×3 grid sets both the main-axis
- *  position (distribution) and cross-axis position (alignment) of a stack in one click.
- *  The right caret slides that grid out and a second panel in — 3 selectable
- *  representations of the space-between/around/evenly distributions the 3×3 grid can't
- *  express — and flips 180° to slide back. A Wrap toggle sits underneath the caret. */
+/** Framer-style combined align + distribute picker: a square 3×3 grid sets both the
+ *  main-axis position (distribution) and cross-axis position (alignment) of a stack in
+ *  one click. A two-dot pager on the right slides that grid up and out and a second
+ *  panel in — 3 selectable representations of the space-between/around/evenly
+ *  distributions the 3×3 grid can't express. */
 export function AlignmentGrid({value, onChange}: AlignmentGridProps) {
-  const {direction, distribution, alignment, wrapEnabled} = value
+  const {direction, distribution, alignment} = value
   const [showAlternates, setShowAlternates] = useState(false)
 
   const cellValue = (col: number, row: number) =>
@@ -71,7 +73,7 @@ export function AlignmentGrid({value, onChange}: AlignmentGridProps) {
             })}
           </div>
         </div>
-        <div className={showAlternates ? 'alignment-slide is-alternates' : 'alignment-slide is-alternates is-away-right'}>
+        <div className={showAlternates ? 'alignment-slide is-alternates' : 'alignment-slide is-alternates is-away-below'}>
           <div className='alignment-alternates'>
             {SPACE_OPTIONS.map((option) => (
               <button
@@ -82,32 +84,47 @@ export function AlignmentGrid({value, onChange}: AlignmentGridProps) {
                 title={option.replace('space-', 'Space ')}
               >
                 <SpaceBars distribution={option} direction={direction} />
+                <span className='alignment-alt-label'>{SPACE_LABELS[option]}</span>
               </button>
             ))}
           </div>
         </div>
       </div>
-      <div className='alignment-side-buttons'>
+      <div className='alignment-pager'>
         <button
           type='button'
-          className={showAlternates ? 'alignment-caret is-flipped' : 'alignment-caret'}
-          onClick={() => setShowAlternates((prev) => !prev)}
-          title={showAlternates ? 'Back to start/center/end' : 'More distribute options'}
-          aria-label={showAlternates ? 'Back to start/center/end' : 'More distribute options'}
+          className={showAlternates ? 'alignment-pager-arrow' : 'alignment-pager-arrow is-active'}
+          onClick={() => setShowAlternates(false)}
+          title='Start / Center / End'
+          aria-label='Show start/center/end grid'
         >
-          <CaretRightIcon />
+          <ArrowIcon direction='up' />
         </button>
         <button
           type='button'
-          className={wrapEnabled ? 'alignment-wrap-toggle is-active' : 'alignment-wrap-toggle'}
-          onClick={() => onChange({wrapEnabled: !wrapEnabled})}
-          title={wrapEnabled ? 'Wrap: on' : 'Wrap: off'}
-          aria-label={wrapEnabled ? 'Disable wrap' : 'Enable wrap'}
+          className={showAlternates ? 'alignment-pager-arrow is-active' : 'alignment-pager-arrow'}
+          onClick={() => setShowAlternates(true)}
+          title='Between / Around / Evenly'
+          aria-label='Show more distribute options'
         >
-          <WrapIcon />
+          <ArrowIcon direction='down' />
         </button>
       </div>
     </div>
+  )
+}
+
+function ArrowIcon({direction}: {direction: 'up' | 'down'}) {
+  return (
+    <svg width='9' height='9' viewBox='0 0 9 9' fill='none'>
+      <path
+        d={direction === 'up' ? 'M2 5.5l2.5-2.5 2.5 2.5' : 'M2 3.5l2.5 2.5 2.5-2.5'}
+        stroke='currentColor'
+        strokeWidth='1.3'
+        strokeLinecap='round'
+        strokeLinejoin='round'
+      />
+    </svg>
   )
 }
 
@@ -188,24 +205,3 @@ function SpaceBars({distribution, direction}: {distribution: string; direction: 
   )
 }
 
-function CaretRightIcon() {
-  return (
-    <svg width='8' height='8' viewBox='0 0 8 8' fill='none'>
-      <path d='M2 .8l3 3.2-3 3.2' stroke='currentColor' strokeWidth='1.3' strokeLinecap='round' strokeLinejoin='round' />
-    </svg>
-  )
-}
-
-function WrapIcon() {
-  return (
-    <svg width='14' height='14' viewBox='0 0 14 14' fill='none'>
-      <path
-        d='M1.5 4h8.5a2 2 0 0 1 0 4H7M1.5 4l2.2-2M1.5 4l2.2 2M1.5 10h8.5a2 2 0 0 0 0-4'
-        stroke='currentColor'
-        strokeWidth='1.2'
-        strokeLinecap='round'
-        strokeLinejoin='round'
-      />
-    </svg>
-  )
-}

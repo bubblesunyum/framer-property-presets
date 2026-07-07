@@ -24,6 +24,8 @@ export interface FieldProps {
     computedPx?: number | null
 }
 
+const PIN_KEYS = new Set(["top", "right", "bottom", "left"])
+
 const YES_NO_OPTIONS = [
     { value: "yes", label: "Yes" },
     { value: "no", label: "No" },
@@ -70,6 +72,7 @@ export function renderControl(
                     compact={descriptor.key === "radius" || descriptor.key === "gap"}
                     maxWidthPx={descriptor.key === "gap" ? 108 : undefined}
                     dim={value == null}
+                    accentLabel={PIN_KEYS.has(descriptor.key)}
                     dragSensitivity={descriptor.key === "radius" ? 0.4 : 1}
                     onChange={(next) => onChange(`${next}${descriptor.unit}`)}
                 />

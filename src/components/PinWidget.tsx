@@ -11,7 +11,7 @@ interface PinWidgetProps {
  *  indicator in Framer's own Position panel. Read-only: the four number fields
  *  around it (not this widget) remain the actual editable controls. */
 export function PinWidget({ top, right, bottom, left }: PinWidgetProps) {
-    const activeStroke = "var(--framer-color-tint)"
+    const activeStroke = "var(--position-accent)"
     const inactiveStroke = "var(--framer-color-text-tertiary)"
 
     return (

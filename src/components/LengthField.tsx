@@ -27,13 +27,22 @@ interface LengthFieldProps {
   /** "W"/"H" shown inside the field's left edge (Width/Height only — Min/Max read via
    *  their own heading above instead, same as pins/padding elsewhere in this app). */
   leftLabel?: string
+  /** Clearing the field (backspace to empty, then blur/Enter) unsets it via this
+   *  callback rather than reverting — Min/Max constraints, which can genuinely be
+   *  absent. Omitted for Width/Height, which always hold a value. */
+  onClear?: () => void
 }
 
 const MODE_ORDER: LengthMode[] = ['px', '%', 'fit-content', 'fr', 'vh']
-const MODE_LABELS: Record<LengthMode, string> = { '%': '%', px: 'px', fr: 'fill', 'fit-content': 'fit', vh: 'vh' }
+// "px" is the implied default unit — the button stays clickable (to cycle away from
+// it) but shows no text, same reasoning as NumberField's own unit suffix.
+const MODE_LABELS: Record<LengthMode, string> = {'%': '%', px: 'px', fr: 'fill', 'fit-content': 'fit', vh: 'vh'}
 
 function modesFor(axis: 'width' | 'height', constrained?: boolean): LengthMode[] {
-  if (constrained) return axis === 'height' ? ['px', '%', 'vh'] : ['px', '%']
+  // Min/Max only ever toggles between px and % — no fill/fit (not valid constraint
+  // values in the SDK) and no vh (deliberately kept out of the cycle to keep the
+  // constraint fields simple; an existing vh value still parses and displays).
+  if (constrained) return ['px', '%']
   return axis === 'height' ? MODE_ORDER : MODE_ORDER.filter((mode) => mode !== 'vh')
 }
 
@@ -70,6 +79,7 @@ export function LengthField({
   expanded,
   onToggleExpanded,
   leftLabel,
+  onClear,
 }: LengthFieldProps) {
   const parsed = parseLength(value)
   const isFit = parsed.mode === 'fit-content'
@@ -91,23 +101,25 @@ export function LengthField({
   )
 
   return (
-    <div className="length-field-row">
-      <div className="length-field-pill">
-        <div className="length-field-value">
-          <NumberField
-            value={isFit ? (computedPx ?? null) : parsed.amount}
-            unit={parsed.mode === 'fr' ? 'fr' : undefined}
-            leftLabel={leftLabel}
-            disabled={isFit}
-            dim={!isFit && parsed.amount == null}
-            compact
-            onChange={(amount) => onChange(serializeLength(parsed.mode, amount))}
-          />
-        </div>
-        <UnitButton mode={parsed.mode} modes={modes} onSelect={setMode} />
+    <div className='length-field-row'>
+      <div className='length-field-pill'>
+        {/* Label and caret anchor the pill's two edges; the value+unit combo (one
+            NumberField with the unit button as its trailing node, so the whole middle
+            stays a single drag surface) floats centered between them. */}
+        {leftLabel && <span className='length-field-label'>{leftLabel}</span>}
+        <NumberField
+          value={isFit ? (computedPx ?? null) : parsed.amount}
+          unit={undefined} // keep this, we don't want units here
+          disabled={isFit}
+          dim={!isFit && parsed.amount == null}
+          centered
+          trailing={<UnitButton mode={parsed.mode} modes={modes} onSelect={setMode} />}
+          onChange={(amount) => onChange(serializeLength(parsed.mode, amount))}
+          onClear={onClear}
+        />
         {expandable && (
           <button
-            type="button"
+            type='button'
             className={expanded ? 'length-field-expand is-expanded' : 'length-field-expand'}
             onClick={onToggleExpanded}
             aria-expanded={expanded}
@@ -124,8 +136,8 @@ export function LengthField({
 
 function ExpandCaretIcon() {
   return (
-    <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
-      <path d="M1 3l3 3 3-3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+    <svg width='8' height='8' viewBox='0 0 8 8' fill='none'>
+      <path d='M1 3l3 3 3-3' stroke='currentColor' strokeWidth='1.3' strokeLinecap='round' strokeLinejoin='round' />
     </svg>
   )
 }
@@ -173,6 +185,10 @@ function UnitButton({mode, modes, onSelect}: UnitButtonProps) {
 
   const handlePointerDown = (event: React.PointerEvent<HTMLButtonElement>) => {
     event.preventDefault()
+    // This button now lives *inside* NumberField (as its trailing node), whose own
+    // pointerdown starts a value drag — without stopping propagation here, pressing
+    // the unit button would also begin scrubbing the value underneath it.
+    event.stopPropagation()
     draggedRef.current = false
     pressedRef.current = true
     pressStartRef.current = {x: event.clientX, y: event.clientY}
@@ -246,20 +262,22 @@ function UnitButton({mode, modes, onSelect}: UnitButtonProps) {
     <>
       <button
         ref={buttonRef}
-        type="button"
-        className="length-field-unit-button"
+        type='button'
+        // px (the implied unit) has no label — `is-blank` shrinks the chip to a small
+        // clickable stub instead of an awkward wide empty pill.
+        className={MODE_LABELS[mode] ? 'length-field-unit-button' : 'length-field-unit-button is-blank'}
         onPointerDown={handlePointerDown}
         onContextMenu={handleContextMenu}
       >
-        <span className="length-field-unit-label">{MODE_LABELS[mode]}</span>
+        <span className='length-field-unit-label'>{MODE_LABELS[mode]}</span>
       </button>
       {position &&
         createPortal(
-          <div ref={listRef} className="length-field-unit-list" style={{top: position.top, left: position.left}}>
+          <div ref={listRef} className='length-field-unit-list' style={{top: position.top, left: position.left}}>
             {modes.map((option, index) => (
               <button
                 key={option}
-                type="button"
+                type='button'
                 data-unit-index={index}
                 className={
                   option === mode
@@ -282,4 +300,3 @@ function UnitButton({mode, modes, onSelect}: UnitButtonProps) {
     </>
   )
 }
-

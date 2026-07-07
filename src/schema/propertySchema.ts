@@ -189,6 +189,7 @@ export const PROPERTY_SCHEMA: PropertyDescriptor[] = [
     control: 'segmented',
     iconSet: 'position',
     fullWidth: true,
+    labelAbove: true,
     guard: supportsPosition,
     options: [
       {value: 'relative', label: 'Relative'},
@@ -368,7 +369,7 @@ export const PROPERTY_SCHEMA: PropertyDescriptor[] = [
   {
     key: 'zIndex',
     group: 'layout',
-    label: 'Z-Index',
+    label: 'Elevation',
     control: 'stepper',
     nullable: true,
     guard: supportsZIndexOrLayout,

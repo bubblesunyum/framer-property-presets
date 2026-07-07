@@ -28,6 +28,11 @@
     --control-selected-bg: #4a4a52;
     --control-selected-fg: var(--framer-color-text);
 
+    /* Position-pin accent — distinct from --framer-color-tint (reserved for primary
+       actions/focus): marks which edges of the position cross are actively pinned, in
+       both the little PinWidget graphic and the T/R/B/L field labels beside it. */
+    --position-accent: #4ade80;
+
     color-scheme: dark;
 }
 

@@ -1,169 +1,173 @@
 .alignment-grid-row {
-    display: flex;
-    /* Stretch (not flex-start) so .alignment-side-buttons' height actually matches the
-       slider's — the row's own height is set by the slider (the tallest child), and the
-       side buttons need to grow to match it, not just start-align against its top. */
-    align-items: stretch;
-    gap: 6px;
-    width: 100%;
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  width: 100%;
 }
 
+/* Square, not stretched to fill the row — the pager beside it is a narrow fixed-width
+   column, so the row overall no longer spans the full available width. */
 .alignment-slider {
-    position: relative;
-    flex: 1;
-    min-width: 0;
-    height: 84px;
-    overflow: hidden;
-    border-radius: 8px;
+  position: relative;
+  flex: 1;
+  /* Wide enough that the alternates panel's longest label ("between") fits its own
+       1-of-3 cell at 8px without clipping. */
+  height: 81px;
+  width: 108px;
+  /* aspect-ratio: 1; */
+  overflow: hidden;
+  border-radius: 8px;
 }
 
 .alignment-slide {
-    position: absolute;
-    inset: 0;
-    transition: transform 0.28s ease;
-    transform: translateX(0);
+  position: absolute;
+  inset: 0;
+  transition: transform 0.28s ease;
+  transform: translateY(0);
 }
 
-/* The 3×3 grid slides fully out to the left once the alternates panel takes over. */
+/* The 3×3 grid slides fully up and out once the alternates panel takes over. */
 .alignment-slide.is-away {
-    transform: translateX(-100%);
+  transform: translateY(-100%);
 }
 
-/* The alternates panel starts parked off-screen to the right, and slides in as
-   `is-alternates` alone (once `is-away-right` is dropped). */
-.alignment-slide.is-alternates.is-away-right {
-    transform: translateX(100%);
+/* The alternates panel starts parked off-screen below, and slides up into place as
+   `is-alternates` alone (once `is-away-below` is dropped). */
+.alignment-slide.is-alternates.is-away-below {
+  transform: translateY(100%);
 }
 
-.alignment-slide.is-alternates:not(.is-away-right) {
-    transform: translateX(0);
+.alignment-slide.is-alternates:not(.is-away-below) {
+  transform: translateY(0);
 }
 
 .alignment-grid,
 .alignment-alternates {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    width: 100%;
-    height: 100%;
-    background: var(--framer-color-bg-tertiary);
-    border-radius: 8px;
-    padding: 6px;
-    gap: 4px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  width: 100%;
+  height: 100%;
+  background: var(--framer-color-bg-tertiary);
+  border-radius: 8px;
+  padding: 6px;
+  gap: 4px;
+  flex: 1;
 }
 
 .alignment-grid {
-    grid-template-rows: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
 }
 
 .alignment-cell {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    min-height: 0;
-    padding: 0;
-    background: none;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    color: var(--framer-color-text-tertiary);
-    transition:
-        background-color 0.12s,
-        color 0.12s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  color: var(--framer-color-text-tertiary);
+  transition:
+    background-color 0.12s,
+    color 0.12s;
 }
 
 .alignment-cell:hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--framer-color-text-secondary);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--framer-color-text-secondary);
 }
 
 .alignment-cell.is-selected,
 .alignment-cell.is-selected:hover {
-    background: var(--control-selected-bg);
-    color: var(--control-selected-fg);
+  background: var(--control-selected-bg);
+  color: var(--control-selected-fg);
 }
 
 .alignment-dot {
-    width: 3px;
-    height: 3px;
-    border-radius: 50%;
-    background: currentColor;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
 }
 
 .alignment-bars {
-    display: block;
+  display: block;
 }
 
-/* The 3 remaining distribute options, one cell each. */
+/* The 3 remaining distribute options, one cell each — icon plus its own short label. */
 .alignment-alt-cell {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    min-height: 0;
-    padding: 0;
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 5px;
-    color: var(--framer-color-text-tertiary);
-    transition:
-        background-color 0.12s,
-        color 0.12s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 5px;
+  color: var(--framer-color-text-tertiary);
+  transition:
+    background-color 0.12s,
+    color 0.12s;
+}
+
+.alignment-alt-label {
+  font-size: 8px;
+  line-height: 1;
+  text-transform: lowercase;
+  white-space: nowrap;
+  letter-spacing: -0.2px;
 }
 
 .alignment-alt-cell:hover {
-    background: rgba(255, 255, 255, 0.07);
-    color: var(--framer-color-text-secondary);
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--framer-color-text-secondary);
 }
 
 .alignment-alt-cell.is-selected,
 .alignment-alt-cell.is-selected:hover {
-    background: var(--control-selected-bg);
-    color: var(--control-selected-fg);
+  background: var(--control-selected-bg);
+  color: var(--control-selected-fg);
 }
 
 .alignment-alt-bars {
-    display: block;
+  display: block;
 }
 
-/* Caret (top) + Wrap toggle (underneath), stacked beside the slider. Each is `flex: 1`
-   rather than a fixed height, so the two together always add up to exactly the
-   slider's own height (whatever that is) instead of two independently-sized buttons
-   that happen to approximate it. */
-.alignment-side-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    flex-shrink: 0;
-    align-self: stretch;
+/* Up/down arrow pager, full height of the square grid beside it. The arrow for the
+   currently-shown page is white; the other dims to the usual tertiary gray. Up shows
+   the start/center/end grid, down shows the between/around/evenly alternates. */
+.alignment-pager {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-shrink: 0;
+  width: 16px;
+  align-self: stretch;
 }
 
-.alignment-caret,
-.alignment-wrap-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex: 1;
-    width: 30px;
-    padding: 0;
-    background: var(--framer-color-bg-tertiary);
-    color: var(--framer-color-text-tertiary);
-    border-radius: 6px;
+.alignment-pager-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  padding: 0;
+  background: none;
+  color: var(--framer-color-text-tertiary);
 }
 
-.alignment-caret:hover,
-.alignment-wrap-toggle:hover {
-    color: var(--framer-color-text-secondary);
+.alignment-pager-arrow:hover {
+  color: var(--framer-color-text-secondary);
 }
 
-.alignment-caret svg {
-    transition: transform 0.25s ease;
-}
-
-.alignment-caret.is-flipped svg {
-    transform: rotate(180deg);
-}
-
-.alignment-wrap-toggle.is-active {
-    background: var(--control-selected-bg);
-    color: var(--control-selected-fg);
+.alignment-pager-arrow.is-active {
+  color: #ffffff;
 }

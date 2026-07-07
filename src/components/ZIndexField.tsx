@@ -1,39 +1,41 @@
-import { NumberField } from "./NumberField"
-import "./ZIndexField.css"
+import {NumberField} from './NumberField'
+import './ZIndexField.css'
 
 interface ZIndexFieldProps {
-    value: number | null
-    onChange: (value: number) => void
+  value: number | null
+  onChange: (value: number) => void
 }
 
-const SNAP_MAX = 5
+const RECT_COUNT = 3
 
-/** Z-Index gets two ways to nudge it, side by side: the field itself (drag anywhere on
- *  it to adjust, like any other NumberField), and a 6-snap-point slider beside it for
- *  quickly jumping between the first few stacking positions (0–5), the common case.
- *  Values above 5 are still fully valid — the slider just pins to its top end for those,
- *  it doesn't clamp the real value. */
-export function ZIndexField({ value, onChange }: ZIndexFieldProps) {
-    const sliderValue = Math.min(Math.max(value ?? 0, 0), SNAP_MAX)
-
-    return (
-        <div className="zindex-field">
-            <NumberField value={value} onChange={onChange} dim={value == null} />
-            <div className="zindex-slider">
-                <input
-                    type="range"
-                    min={0}
-                    max={SNAP_MAX}
-                    step={1}
-                    value={sliderValue}
-                    onChange={(event) => onChange(Number(event.currentTarget.value))}
-                />
-                <div className="zindex-slider-dots">
-                    {Array.from({ length: SNAP_MAX + 1 }, (_, i) => (
-                        <span key={i} className={i <= sliderValue ? "zindex-slider-dot is-filled" : "zindex-slider-dot"} />
-                    ))}
-                </div>
-            </div>
-        </div>
-    )
+/** Z-Index as a vertical stack of six rounded rectangles (bottom = 0, top = 5), with the
+ *  editable number field beneath them. Exactly one rectangle highlights — the one whose
+ *  index matches the current value — and none highlight when the value falls outside
+ *  0–5, since the stack only represents that common near-front range (the field itself
+ *  still holds and edits any integer). */
+export function ZIndexField({value, onChange}: ZIndexFieldProps) {
+  return (
+    <div className='zindex-field'>
+      <div className='zindex-stack'>
+        {/* Rendered top-to-bottom, so the highest index is first in the DOM and 0
+                    lands at the bottom, matching how a stacking order reads visually. */}
+        {Array.from({length: RECT_COUNT}, (_, i) => {
+          const rectValue = RECT_COUNT - 1 - i
+          const isSelected = value === rectValue || (value === null && rectValue === 0)
+          return (
+            <button
+              key={rectValue}
+              type='button'
+              className={isSelected ? 'zindex-rect is-selected' : 'zindex-rect'}
+              onClick={() => onChange(rectValue)}
+              title={`Z-Index ${rectValue}`}
+              aria-label={`Set z-index to ${rectValue}`}
+              aria-pressed={isSelected}
+            />
+          )
+        })}
+      </div>
+      <NumberField value={value ?? 0} onChange={onChange} dim={value == null} compact hugContent />
+    </div>
+  )
 }

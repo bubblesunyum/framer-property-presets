@@ -18,8 +18,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 30px;
-    height: 30px;
+    width: 32px;
+    height: 32px;
     flex-shrink: 0;
     /* framer.css's generic `button` rule forces 10px/side padding by default — without
        overriding it here, this small square button squeezes its icon down to a sliver
