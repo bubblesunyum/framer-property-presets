@@ -13,14 +13,14 @@ interface MainViewProps {
 }
 
 const TABS = [
-  {value: 'design', label: 'Design'},
+  {value: 'style', label: 'Style'},
   {value: 'presets', label: 'Presets'},
 ]
 
-/** Top-level tabbed shell: Design is the live property editor for the current
+/** Top-level tabbed shell: Style is the live property editor for the current
  *  selection, Presets is the saved-preset list. */
 export function MainView({selection, onRequestNew, onRequestEdit}: MainViewProps) {
-  const [tab, setTab] = useState('design')
+  const [tab, setTab] = useState('style')
 
   return (
     <main className='main-view'>
@@ -28,7 +28,7 @@ export function MainView({selection, onRequestNew, onRequestEdit}: MainViewProps
         <SegmentedControl options={TABS} value={tab} onChange={setTab} />
       </div>
       <div className='main-view-content'>
-        {tab === 'design' ? (
+        {tab === 'style' ? (
           <DesignPanel selection={selection} />
         ) : (
           <PresetList selection={selection} onRequestNew={onRequestNew} onRequestEdit={onRequestEdit} />

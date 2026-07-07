@@ -51,6 +51,10 @@ export interface FieldPropsConfig {
   commit: (changes: PresetProperties) => void
   /** Edit mode only: toggle a key in/out of the saved preset. Omitted elsewhere. */
   onToggleIncluded?: (key: PresetPropertyKey) => void
+  /** Live-only: the selected node's actual rendered size, used to show Width/Height's
+   *  read-only value when their mode is "Fit" (which has no numeric value of its own).
+   *  Undefined when there's no live node to measure (preset edit mode). */
+  computedSize?: {width: number | null; height: number | null}
 }
 
 /** Turns a property key into the props a PropertyRow needs, resolving the two composite
@@ -119,5 +123,7 @@ export function buildFieldProps(key: PresetPropertyKey, config: FieldPropsConfig
     included,
     onChange: (value) => config.commit({[key]: value}),
     onToggleIncluded,
+    computedPx:
+      key === 'width' ? (config.computedSize?.width ?? null) : key === 'height' ? (config.computedSize?.height ?? null) : undefined,
   }
 }

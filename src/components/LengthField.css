@@ -12,12 +12,14 @@
     display: flex;
     align-items: center;
     min-height: 30px;
+    padding: 0 2px;
 }
 
-/* The value input is bare inside the shared box — no field chrome of its own. */
-.length-field-value .number-field-input {
+/* The value field is bare inside the shared box — no chrome/background of its own,
+   the outer .length-field box already provides it. */
+.length-field-value .number-field {
     background: transparent;
-    box-shadow: none;
+    padding: 0 8px;
     height: 28px;
 }
 

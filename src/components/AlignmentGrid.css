@@ -1,3 +1,15 @@
+.alignment-grid-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    width: 100%;
+}
+
+.alignment-grid-area {
+    flex: 1;
+    min-width: 0;
+}
+
 .alignment-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -47,4 +59,107 @@
 
 .alignment-bars {
     display: block;
+}
+
+/* Settings trigger sits beside the grid/visualization, top-aligned with it. */
+.alignment-settings-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+    /* framer.css's generic `button` rule forces 10px/side padding by default — without
+       overriding it here, this small square button squeezes its icon down to a sliver
+       since the padding alone nearly consumes its whole width. */
+    padding: 0;
+    background: var(--framer-color-bg-tertiary);
+    color: var(--framer-color-text-tertiary);
+    border-radius: 6px;
+}
+
+.alignment-settings-trigger:hover {
+    color: var(--framer-color-text);
+}
+
+.alignment-settings-list {
+    position: fixed;
+    min-width: 160px;
+    background: var(--framer-color-bg-secondary);
+    border: 1px solid var(--framer-color-divider);
+    border-radius: 10px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+    z-index: 1000;
+}
+
+.alignment-settings-option {
+    width: 100%;
+    height: 30px;
+    padding: 0 10px;
+    justify-content: flex-start;
+    background: none;
+    color: var(--framer-color-text-secondary);
+    font-weight: 500;
+    border-radius: 6px;
+    white-space: nowrap;
+    text-align: left;
+}
+
+.alignment-settings-option:hover {
+    background: var(--framer-color-bg-tertiary);
+    color: var(--framer-color-text);
+}
+
+/* Replaces the 3×3 grid once a space-* distribution is picked — same footprint, a
+   centered illustration of the pattern plus a small "clear" button back to the grid. */
+.alignment-space-viz {
+    position: relative;
+    width: 100%;
+    height: 62px;
+    background: var(--framer-color-bg-tertiary);
+    border-radius: 8px;
+}
+
+.alignment-space-bar {
+    position: absolute;
+    background: var(--control-selected-fg);
+    border-radius: 1.2px;
+}
+
+.alignment-space-bar.is-horizontal {
+    top: 14px;
+    width: 2.4px;
+    height: 16px;
+    transform: translateX(-50%);
+}
+
+.alignment-space-bar.is-vertical {
+    left: 50%;
+    width: 16px;
+    height: 2.4px;
+    transform: translate(-50%, -50%);
+}
+
+.alignment-space-clear {
+    position: absolute;
+    bottom: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    height: auto;
+    min-height: 0;
+    padding: 2px 8px;
+    background: none;
+    color: var(--framer-color-text-tertiary);
+    font-size: 10px;
+    font-weight: 500;
+    border-radius: 4px;
+}
+
+.alignment-space-clear:hover {
+    color: var(--framer-color-text-secondary);
+    background: rgba(255, 255, 255, 0.05);
 }

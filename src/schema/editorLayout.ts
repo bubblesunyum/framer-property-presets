@@ -17,15 +17,14 @@ export const EDITOR_ROWS: Record<PropertyGroup, EditorRow[]> = {
     position: [],
     size: [],
     layout: [
-        // Clip Content sits first so it never moves as Flow-specific rows appear/
-        // disappear below it. Direction is folded into the Flow control (Row/Column);
-        // Distribute + Align are folded into one alignment grid ("stackAlignment").
-        "overflow",
+        // Direction is folded into the Flow control (Row/Column); Distribute + Align
+        // are folded into one alignment grid ("stackAlignment").
         "layout",
         "gap",
         "padding",
         "stackAlignment",
         "stackWrapEnabled",
+        "zIndex",
         ["gridColumnCount", "gridRowCount"],
         "gridAlignment",
         "gridColumnWidthType",
@@ -34,4 +33,7 @@ export const EDITOR_ROWS: Record<PropertyGroup, EditorRow[]> = {
         "gridRowHeightType",
         "gridRowHeight",
     ],
+    // "visible" is rendered specially, as an eye-icon toggle in the section's own
+    // header (see AppearanceSection) — excluded from this row list for that reason.
+    appearance: ["overflow", "radius", "opacity"],
 }

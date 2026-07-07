@@ -3,6 +3,7 @@ import { AlignmentGrid, type AlignmentValue } from "./AlignmentGrid"
 import { Dropdown } from "./Dropdown"
 import { LengthField } from "./LengthField"
 import { NumberField } from "./NumberField"
+import { NumberStepper } from "./NumberStepper"
 import { PaddingField } from "./PaddingField"
 import "./PropertyRow.css"
 import { SegmentedControl } from "./SegmentedControl"
@@ -17,6 +18,10 @@ export interface FieldProps {
     /** Edit mode only: clicking the label toggles this field out of/into the preset.
      *  Omitted in create mode, where inclusion is inferred instead (see PresetEditor). */
     onToggleIncluded?: () => void
+    /** Live-only: the node's actual rendered pixel size, shown (disabled) in place of a
+     *  real value for Width/Height while their mode is "Fit" — see LengthField. Absent
+     *  in edit mode, where there's no live node to measure. */
+    computedPx?: number | null
 }
 
 const YES_NO_OPTIONS = [
@@ -33,16 +38,23 @@ function parseNumeric(raw: unknown): number | null {
     return null
 }
 
-export function renderControl(descriptor: PropertyDescriptor, value: unknown, onChange: (value: unknown) => void) {
+export function renderControl(
+    descriptor: PropertyDescriptor,
+    value: unknown,
+    onChange: (value: unknown) => void,
+    computedPx?: number | null
+) {
     switch (descriptor.control) {
         case "dimension":
             return (
                 <NumberField
                     value={parseNumeric(value)}
-                    unit={descriptor.displaySuffix ?? descriptor.unit}
-                    // A displaySuffix is a side label (T/L/…) that stays pinned right; a
-                    // plain unit (gap's "px") reads inline right after the value ("8px").
-                    inlineUnit={!descriptor.displaySuffix}
+                    unit={descriptor.unit}
+                    leftLabel={descriptor.displaySuffix}
+                    // A plain dimension (no side label — gap, radius) is capped narrow so
+                    // it doesn't stretch to fill its row; side-labelled ones (pins) size
+                    // via their own cross/pair layout instead.
+                    compact={!descriptor.displaySuffix}
                     onChange={(next) => onChange(`${next}${descriptor.unit}`)}
                 />
             )
@@ -51,6 +63,7 @@ export function renderControl(descriptor: PropertyDescriptor, value: unknown, on
                 <LengthField
                     value={typeof value === "string" ? value : null}
                     constrained={descriptor.constrained}
+                    computedPx={computedPx}
                     onChange={onChange}
                 />
             )
@@ -76,15 +89,31 @@ export function renderControl(descriptor: PropertyDescriptor, value: unknown, on
                     onChange={(event) => onChange(event.currentTarget.checked)}
                 />
             )
-        case "clip-toggle":
-            return (
-                <ToggleSwitch
-                    checked={value === "hidden" || value === "clip"}
-                    onChange={(checked) => onChange(checked ? "hidden" : "visible")}
-                />
-            )
         case "toggle":
             return <ToggleSwitch checked={Boolean(value)} onChange={onChange} />
+        case "stepper":
+            return (
+                <NumberStepper
+                    value={typeof value === "number" ? value : null}
+                    min={descriptor.min}
+                    max={descriptor.max}
+                    onChange={onChange}
+                />
+            )
+        case "opacity": {
+            // Stored as a plain 0–1 fraction; shown/edited as a 0–100 percentage.
+            const percent = typeof value === "number" ? Math.round(value * 100) : null
+            return (
+                <NumberField
+                    value={percent}
+                    unit="%"
+                    min={0}
+                    max={100}
+                    compact
+                    onChange={(next) => onChange(next / 100)}
+                />
+            )
+        }
         case "yes-no":
             return (
                 <SegmentedControl
@@ -125,12 +154,13 @@ export function renderControl(descriptor: PropertyDescriptor, value: unknown, on
 /** Full-width row: label on the left, control filling the rest — for properties that
  *  don't naturally pair with a neighbor. Dims when not (yet) included, rather than
  *  showing a separate include/exclude checkbox. */
-export function PropertyRow({ descriptor, value, included, onChange, onToggleIncluded }: FieldProps) {
-    // Padding can grow taller when expanded to four sides — top-align the row so its
-    // label and the control's expand button don't drift down as it opens/closes.
+export function PropertyRow({ descriptor, value, included, onChange, onToggleIncluded, computedPx }: FieldProps) {
+    // Padding/Alignment can grow taller as they expand — top-align the row so the label
+    // and the control's own top-row chrome (expand button, settings icon) don't drift
+    // down as they open/grow.
     const classes = ["row", "property-row"]
     if (included) classes.push("is-included")
-    if (descriptor.control === "padding") classes.push("is-top")
+    if (descriptor.control === "padding" || descriptor.control === "align-grid") classes.push("is-top")
     return (
         <div className={classes.join(" ")}>
             <label
@@ -139,20 +169,24 @@ export function PropertyRow({ descriptor, value, included, onChange, onToggleInc
             >
                 {descriptor.label}
             </label>
-            <div className="property-row-control">{renderControl(descriptor, value, onChange)}</div>
+            <div className="property-row-control">{renderControl(descriptor, value, onChange, computedPx)}</div>
         </div>
     )
 }
 
 /** Bare control with no label at all — for bespoke layouts (the Position cross) where
  *  the field's identity is already conveyed some other way (e.g. an inline suffix). */
-export function PropertyControlOnly({ descriptor, value, included, onChange }: FieldProps) {
-    return <div className={included ? "control-only is-included" : "control-only"}>{renderControl(descriptor, value, onChange)}</div>
+export function PropertyControlOnly({ descriptor, value, included, onChange, computedPx }: FieldProps) {
+    return (
+        <div className={included ? "control-only is-included" : "control-only"}>
+            {renderControl(descriptor, value, onChange, computedPx)}
+        </div>
+    )
 }
 
 /** Compact field for side-by-side pairs (Left/Top, Width/Height, and so on) — label
  *  sits above the control instead of beside it, so two comfortably fit one row. */
-export function PropertyMiniField({ descriptor, value, included, onChange, onToggleIncluded }: FieldProps) {
+export function PropertyMiniField({ descriptor, value, included, onChange, onToggleIncluded, computedPx }: FieldProps) {
     return (
         <div className={included ? "mini-field is-included" : "mini-field"}>
             <label
@@ -161,7 +195,7 @@ export function PropertyMiniField({ descriptor, value, included, onChange, onTog
             >
                 {descriptor.label}
             </label>
-            {renderControl(descriptor, value, onChange)}
+            {renderControl(descriptor, value, onChange, computedPx)}
         </div>
     )
 }

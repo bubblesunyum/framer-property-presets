@@ -2,16 +2,20 @@ import {
   type CanvasNode,
   hasGridLayout,
   hasStackLayout,
+  supportsBorderRadius,
   supportsLayout,
+  supportsOpacity,
   supportsOverflow,
   supportsPins,
   supportsPosition,
   supportsSize,
   supportsSizeConstraints,
+  supportsVisible,
+  supportsZIndex,
 } from 'framer-plugin'
 import type {PresetProperties, PresetPropertyKey, PropertyGroup} from '../types/preset'
 
-export type IconSet = 'direction' | 'alignment' | 'distribution' | 'flow' | 'position'
+export type IconSet = 'direction' | 'alignment' | 'distribution' | 'flow' | 'position' | 'overflow'
 
 interface BaseDescriptor {
   key: PresetPropertyKey
@@ -70,21 +74,12 @@ export interface BooleanDescriptor extends BaseDescriptor {
   control: 'boolean'
 }
 
-/** Checkbox over the SDK's 4-state `overflow` enum ("visible" | "hidden" | "auto" |
- *  "clip") rather than a true boolean — checked means "hidden" (clips), unchecked
- *  means "visible" (doesn't). Matches how Framer's own "Clip content" checkbox works;
- *  "auto"/"clip" aren't offered as a separate UI state here. */
-export interface ClipToggleDescriptor extends BaseDescriptor {
-  control: 'clip-toggle'
-}
-
 /** Boolean rendered as a two-way "Yes"/"No" segmented control instead of a checkbox. */
 export interface YesNoDescriptor extends BaseDescriptor {
   control: 'yes-no'
 }
 
-/** Plain boolean rendered as a sliding on/off pill (ToggleSwitch), same visual as Clip
- *  Content — for true booleans like Wrap (unlike clip-toggle, which maps an enum). */
+/** Plain boolean rendered as a sliding on/off pill (ToggleSwitch) — e.g. Wrap. */
 export interface ToggleDescriptor extends BaseDescriptor {
   control: 'toggle'
 }
@@ -94,6 +89,20 @@ export interface ToggleDescriptor extends BaseDescriptor {
  *  AlignmentGrid and the `stackAlignment` composite in buildFieldProps. */
 export interface AlignGridDescriptor extends BaseDescriptor {
   control: 'align-grid'
+}
+
+/** Nullable numeric field with a small +/- pair beside it — for Z-Index, where nudging
+ *  by one is the common interaction. */
+export interface StepperDescriptor extends BaseDescriptor {
+  control: 'stepper'
+  min?: number
+  max?: number
+  nullable: boolean
+}
+
+/** The SDK's `opacity` is a plain 0–1 number; shown/edited as a 0–100 percentage. */
+export interface OpacityDescriptor extends BaseDescriptor {
+  control: 'opacity'
 }
 
 export interface SelectOption {
@@ -125,10 +134,11 @@ export type PropertyDescriptor =
   | SizeLengthDescriptor
   | NumberDescriptor
   | BooleanDescriptor
-  | ClipToggleDescriptor
   | YesNoDescriptor
   | ToggleDescriptor
   | AlignGridDescriptor
+  | StepperDescriptor
+  | OpacityDescriptor
   | SelectDescriptor
   | SegmentedDescriptor
 
@@ -269,13 +279,6 @@ export const PROPERTY_SCHEMA: PropertyDescriptor[] = [
     guard: supportsLayout,
     visibleWhen: hasLayout,
   },
-  {
-    key: 'overflow',
-    group: 'layout',
-    label: 'Clip Content',
-    control: 'clip-toggle',
-    guard: supportsOverflow,
-  },
 
   // ---- Layout (stack-specific) ----
   {
@@ -326,6 +329,14 @@ export const PROPERTY_SCHEMA: PropertyDescriptor[] = [
     control: 'toggle',
     guard: hasStackLayout,
     visibleWhen: isStack,
+  },
+  {
+    key: 'zIndex',
+    group: 'layout',
+    label: 'Z-Index',
+    control: 'stepper',
+    nullable: true,
+    guard: supportsZIndex,
   },
 
   // ---- Layout (grid-specific) ----
@@ -413,6 +424,48 @@ export const PROPERTY_SCHEMA: PropertyDescriptor[] = [
     nullable: true,
     guard: hasGridLayout,
     visibleWhen: (p) => isGrid(p) && p.gridRowHeightType === 'fixed',
+  },
+
+  // ---- Appearance ----
+  {
+    key: 'overflow',
+    group: 'appearance',
+    label: 'Overflow',
+    control: 'segmented',
+    iconSet: 'overflow',
+    guard: supportsOverflow,
+    options: [
+      {value: 'visible', label: 'Visible'},
+      {value: 'hidden', label: 'Hidden'},
+      {value: 'auto', label: 'Scroll'},
+      {value: 'clip', label: 'Clip'},
+    ],
+  },
+  {
+    key: 'radius',
+    group: 'appearance',
+    label: 'Radius',
+    control: 'dimension',
+    unit: 'px',
+    nullable: true,
+    guard: supportsBorderRadius,
+  },
+  {
+    key: 'opacity',
+    group: 'appearance',
+    label: 'Opacity',
+    control: 'opacity',
+    guard: supportsOpacity,
+  },
+  {
+    // Rendered specially, as an eye-icon toggle in the Appearance section's own header
+    // (see AppearanceSection) rather than through the generic row list — it's excluded
+    // from EDITOR_ROWS.appearance for that reason.
+    key: 'visible',
+    group: 'appearance',
+    label: 'Visible',
+    control: 'toggle',
+    guard: supportsVisible,
   },
 ]
 

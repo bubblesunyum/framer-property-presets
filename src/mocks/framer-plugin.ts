@@ -19,6 +19,10 @@ export const supportsLayout = alwaysTrue
 export const supportsOverflow = alwaysTrue
 export const hasStackLayout = alwaysTrue
 export const hasGridLayout = alwaysTrue
+export const supportsOpacity = alwaysTrue
+export const supportsBorderRadius = alwaysTrue
+export const supportsVisible = alwaysTrue
+export const supportsZIndex = alwaysTrue
 
 export function useIsAllowedTo(): boolean {
     return true
@@ -49,9 +53,14 @@ const fakeNode = {
     gap: "10px",
     padding: "16px",
     overflow: "visible",
+    radius: "8px",
+    opacity: 1,
+    visible: true,
+    zIndex: null,
     setAttributes: async (attributes: Record<string, unknown>) => {
         console.log("[preview] setAttributes", attributes)
     },
+    getRect: async () => ({x: 0, y: 0, width: 180, height: 64}),
 }
 
 export const framer = {

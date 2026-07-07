@@ -90,6 +90,40 @@ function PositionIcon({ value }: { value: string }) {
     )
 }
 
+function OverflowIcon({ value }: { value: string }) {
+    if (value === "hidden") {
+        return (
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.3" />
+            </svg>
+        )
+    }
+    if (value === "auto") {
+        return (
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.3" />
+                <rect x="11.2" y="4" width="1.6" height="8" rx="0.8" fill="currentColor" />
+            </svg>
+        )
+    }
+    if (value === "clip") {
+        return (
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M2 2h4v1.6H3.6V6H2V2z" fill="currentColor" />
+                <path d="M14 14h-4v-1.6h2.4V10H14v4z" fill="currentColor" />
+                <rect x="4.5" y="4.5" width="9" height="9" rx="1" stroke="currentColor" strokeWidth="1.3" />
+            </svg>
+        )
+    }
+    // visible — content pokes out past the bounds
+    return (
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <rect x="3" y="3" width="8" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.3" />
+            <rect x="6.5" y="6.5" width="8" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.2" opacity="0.45" />
+        </svg>
+    )
+}
+
 function DirectionIcon({ value }: { value: string }) {
     return value === "vertical" ? (
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -154,6 +188,7 @@ function Icon({ iconSet, value }: { iconSet: NonNullable<SegmentedControlProps["
     if (iconSet === "alignment") return <AlignmentIcon value={value} />
     if (iconSet === "flow") return <FlowIcon value={value} />
     if (iconSet === "position") return <PositionIcon value={value} />
+    if (iconSet === "overflow") return <OverflowIcon value={value} />
     return <DistributionIcon value={value} />
 }
 

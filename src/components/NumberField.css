@@ -1,65 +1,77 @@
 .number-field {
     position: relative;
+    display: inline-flex;
+    align-items: center;
     width: 100%;
+    height: 30px;
+    padding: 0 10px;
+    background: var(--framer-color-bg-tertiary);
+    border-radius: 8px;
+    cursor: text;
 }
 
-.number-field-input {
-    width: 100%;
+.number-field.is-compact {
+    width: auto;
+    /* ~6 characters + unit + the box's own right padding, so Width/Height/Gap/Radius
+       don't stretch to fill their row. */
+    min-width: 46px;
+    max-width: 92px;
 }
 
-.number-field-input.has-unit {
-    padding-right: 18px;
+.number-field.is-disabled {
+    cursor: default;
+    opacity: 0.6;
 }
 
-.number-field-input.has-left {
-    padding-left: 16px;
+.number-field-label {
+    flex-shrink: 0;
+    margin-right: 6px;
+    font-size: 10px;
+    color: var(--framer-color-text-tertiary);
+    pointer-events: none;
+}
+
+/* Compound selector deliberately: framer.css's own `input[type="number"]` rule (an
+   attribute selector) outranks a bare `.number-field-input` class on specificity alone
+   and was force-adding its own 10px/side padding back — which, combined with this
+   field's narrow content-sized width, left almost no room for the digits themselves and
+   silently clipped them. Nesting under `.number-field` beats it without needing
+   `!important`. */
+.number-field .number-field-input {
+    flex: 0 1 auto;
+    min-width: 1ch;
+    width: auto;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    margin: 0;
+    text-align: left;
+    color: var(--framer-color-text);
+    /* Without this, a native number spinner still reserves its own width even though
+       no arrows are visible (the input is sized narrower than that reserved space via
+       the ch-based inline width below), which was clipping the last digit or two. */
+    appearance: none;
+    -moz-appearance: textfield;
+}
+
+.number-field .number-field-input::-webkit-outer-spin-button,
+.number-field .number-field-input::-webkit-inner-spin-button {
+    appearance: none;
+    margin: 0;
+}
+
+.number-field-input:disabled {
+    color: var(--framer-color-text-secondary);
+    -webkit-text-fill-color: var(--framer-color-text-secondary);
 }
 
 .number-field-unit {
-    position: absolute;
-    right: 6px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 10px;
-    color: var(--framer-color-text-tertiary);
-    pointer-events: none;
-}
-
-.number-field-side {
-    position: absolute;
-    left: 7px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 10px;
-    color: var(--framer-color-text-tertiary);
-    pointer-events: none;
-}
-
-/* Inline-unit mode: the field hugs its content so the value and unit read together
-   ("375px"), left-aligned, rather than the unit floating at the far right edge. */
-.number-field.is-inline {
-    display: inline-flex;
-    align-items: center;
-    gap: 1px;
-    width: auto;
-    /* Cap at ~6 chars + unit + right padding so Width/Height/Gap don't stretch wide;
-       a min keeps a short value ("8px") from collapsing to an untappable sliver. */
-    min-width: 46px;
-    max-width: 82px;
-}
-
-.number-field.is-inline .number-field-input {
-    width: auto;
-    min-width: 1ch;
-    padding-left: 8px;
-    padding-right: 0;
-    text-align: left;
-}
-
-.number-field-unit.is-inline {
-    position: static;
-    right: auto;
-    transform: none;
+    flex-shrink: 0;
+    margin-left: 2px;
     font-size: 11px;
-    padding-right: 8px;
+    /* A bit brighter than the field's other dim text so the unit stays legible next to
+       the value instead of fading into the background. */
+    color: var(--framer-color-text-secondary);
+    pointer-events: none;
 }

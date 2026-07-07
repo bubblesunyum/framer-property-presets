@@ -69,10 +69,10 @@ export function PaddingField({ value, onChange }: PaddingFieldProps) {
         <div className="padding-field">
             {expanded ? (
                 <div className="padding-field-sides">
+                    <NumberField value={sides.left} leftLabel="L" unit="px" onChange={(next) => setSide("left", next)} />
                     <NumberField value={sides.top} leftLabel="T" unit="px" onChange={(next) => setSide("top", next)} />
                     <NumberField value={sides.right} leftLabel="R" unit="px" onChange={(next) => setSide("right", next)} />
                     <NumberField value={sides.bottom} leftLabel="B" unit="px" onChange={(next) => setSide("bottom", next)} />
-                    <NumberField value={sides.left} leftLabel="L" unit="px" onChange={(next) => setSide("left", next)} />
                 </div>
             ) : (
                 <div className="padding-field-axes">

@@ -15,23 +15,38 @@ import {
 type FieldPropsFor = (key: PresetPropertyKey) => FieldProps | null
 
 /** Renders the full property form for a single node's draft — one combined Position &
- *  Size section (position control + conditional pin cross + Width/Height axes) plus the
- *  Layout section. Shared verbatim between the preset editor and the live Design panel;
- *  the only difference is the `fieldProps` builder each hands in. */
+ *  Size section (position control + conditional pin cross + Width/Height axes), the
+ *  Layout section, and an Appearance section. Shared verbatim between the preset editor
+ *  and the live Design panel; the only difference is the `fieldProps` builder each
+ *  hands in. */
 export function PropertySections({fieldProps}: {fieldProps: FieldPropsFor}) {
   return (
     <>
       <PositionSizeSection fieldProps={fieldProps} />
       <LayoutSection fieldProps={fieldProps} />
+      <AppearanceSection fieldProps={fieldProps} />
     </>
   )
 }
 
-function Section({title, isEmpty, children}: {title: string; isEmpty: boolean; children: ReactNode}) {
+function Section({
+  title,
+  isEmpty,
+  headerAction,
+  children,
+}: {
+  title: string
+  isEmpty: boolean
+  headerAction?: ReactNode
+  children: ReactNode
+}) {
   return (
     <section className='property-section'>
       <div className='framer-divider' />
-      <h3 className='property-section-heading'>{title}</h3>
+      <div className='property-section-header'>
+        <h3 className='property-section-heading'>{title}</h3>
+        {headerAction}
+      </div>
       {isEmpty ? (
         <p className='property-section-empty'>This layer doesn't support {title.toLowerCase()} properties.</p>
       ) : (
@@ -97,11 +112,12 @@ function PositionSizeSection({fieldProps}: {fieldProps: FieldPropsFor}) {
 }
 
 /** One dimension column: the Width/Height field, with its own Min/Max fields tucked
- *  behind a small "min/max" expander directly underneath. */
+ *  behind a small "min/max" expander directly underneath — defaults open if either is
+ *  already explicitly set, so a layer with real constraints shows them right away. */
 function SizeAxis({main, min, max}: {main: FieldProps | null; min: FieldProps | null; max: FieldProps | null}) {
-  const [open, setOpen] = useState(false)
-  if (!main) return null
   const hasMinMax = Boolean(min || max)
+  const [open, setOpen] = useState(() => hasMinMax && (min?.value != null || max?.value != null))
+  if (!main) return null
 
   return (
     <div className='size-axis'>
@@ -112,7 +128,7 @@ function SizeAxis({main, min, max}: {main: FieldProps | null; min: FieldProps | 
         {main.descriptor.label}
       </label>
       <div className={main.included ? 'size-axis-field is-included' : 'size-axis-field'}>
-        {renderControl(main.descriptor, main.value, main.onChange)}
+        {renderControl(main.descriptor, main.value, main.onChange, main.computedPx)}
       </div>
       {hasMinMax && (
         <>
@@ -123,7 +139,7 @@ function SizeAxis({main, min, max}: {main: FieldProps | null; min: FieldProps | 
             onClick={() => setOpen((prev) => !prev)}
           >
             <ChevronIcon />
-            min/max
+            {!open && 'min/max'}
           </button>
           {open && (
             <div className='size-axis-minmax'>
@@ -152,6 +168,67 @@ function LayoutSection({fieldProps}: {fieldProps: FieldPropsFor}) {
     <Section title='Layout' isEmpty={rows.length === 0}>
       {rows}
     </Section>
+  )
+}
+
+function AppearanceSection({fieldProps}: {fieldProps: FieldPropsFor}) {
+  const visible = fieldProps('visible')
+  const rows = renderRows(EDITOR_ROWS.appearance, fieldProps)
+  return (
+    <Section
+      title='Appearance'
+      isEmpty={rows.length === 0 && !visible}
+      headerAction={visible && <VisibilityToggle field={visible} />}
+    >
+      {rows}
+    </Section>
+  )
+}
+
+/** Right-aligned eye icon in the Appearance section's own header, rather than a normal
+ *  row — toggles the layer's visibility directly (there's no separate label here to
+ *  drive edit mode's usual include/exclude click, so this button only ever edits the
+ *  value; the dimming still reflects whether it's currently included in the preset). */
+function VisibilityToggle({field}: {field: FieldProps}) {
+  const isVisible = field.value !== false
+  return (
+    <button
+      type='button'
+      className={field.included ? 'appearance-visibility-toggle is-included' : 'appearance-visibility-toggle'}
+      onClick={() => field.onChange(!isVisible)}
+      title={isVisible ? 'Visible' : 'Hidden'}
+      aria-label={isVisible ? 'Hide layer' : 'Show layer'}
+    >
+      {isVisible ? <EyeIcon /> : <EyeOffIcon />}
+    </button>
+  )
+}
+
+function EyeIcon() {
+  return (
+    <svg width='15' height='15' viewBox='0 0 15 15' fill='none'>
+      <path
+        d='M1 7.5S3.5 3 7.5 3 14 7.5 14 7.5 11.5 12 7.5 12 1 7.5 1 7.5z'
+        stroke='currentColor'
+        strokeWidth='1.2'
+        strokeLinejoin='round'
+      />
+      <circle cx='7.5' cy='7.5' r='2.1' stroke='currentColor' strokeWidth='1.2' />
+    </svg>
+  )
+}
+
+function EyeOffIcon() {
+  return (
+    <svg width='15' height='15' viewBox='0 0 15 15' fill='none'>
+      <path
+        d='M2 3l11 9M4.2 4.9C2.5 6 1 7.5 1 7.5S3.5 12 7.5 12c1.2 0 2.2-.3 3.1-.8M6.1 3.2c.45-.1.9-.2 1.4-.2 4 0 6.5 4.5 6.5 4.5s-.6 1.1-1.7 2.2'
+        stroke='currentColor'
+        strokeWidth='1.2'
+        strokeLinecap='round'
+        strokeLinejoin='round'
+      />
+    </svg>
   )
 }
 

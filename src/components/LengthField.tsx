@@ -10,6 +10,11 @@ interface LengthFieldProps {
   /** Restricts the mode picker to px/% — for Min/Max constraint fields, which (unlike
    *  Width/Height) can never be "Fill" or "Fit Content" — see SizeLengthDescriptor. */
   constrained?: boolean
+  /** The node's actual rendered pixel size — shown, disabled, in place of a real value
+   *  while mode is "Fit" (which has no numeric value of its own). Only ever populated
+   *  where there's a live node to measure (create mode / the Design panel); absent in
+   *  edit mode, where the field just shows an empty dash instead. */
+  computedPx?: number | null
 }
 
 const SIZE_MODE_OPTIONS = [
@@ -41,25 +46,24 @@ function serializeLength(mode: LengthMode, amount: number | null): string {
 /** Width/height-style field: one connected control with the numeric value on top,
  *  a thin divider, and the mode picker (Fill / Fit / % / px) below — matching Framer's
  *  own Size field, where the value and its unit read together ("375px") and every mode
- *  is one click away. "Fit" has no numeric value, so the value row (and divider) drop
- *  out for it, leaving just the picker. */
-export function LengthField({value, onChange, constrained}: LengthFieldProps) {
+ *  is one click away. "Fit" has no numeric value of its own, so its row shows the
+ *  node's actual rendered size instead, disabled (not removed) rather than disappearing. */
+export function LengthField({value, onChange, constrained, computedPx}: LengthFieldProps) {
   const parsed = parseLength(value)
-  const hasValue = parsed.mode !== 'fit-content'
+  const isFit = parsed.mode === 'fit-content'
 
   return (
     <div className='length-field'>
-      {hasValue && (
-        <div className='length-field-value'>
-          <NumberField
-            value={parsed.amount}
-            unit={parsed.mode}
-            inlineUnit
-            onChange={(amount) => onChange(serializeLength(parsed.mode, amount))}
-          />
-        </div>
-      )}
-      {hasValue && <div className='length-field-divider' />}
+      <div className='length-field-value'>
+        <NumberField
+          value={isFit ? (computedPx ?? null) : parsed.amount}
+          unit={isFit ? 'px' : parsed.mode}
+          disabled={isFit}
+          compact
+          onChange={(amount) => onChange(serializeLength(parsed.mode, amount))}
+        />
+      </div>
+      <div className='length-field-divider' />
       <SegmentedControl
         value={parsed.mode}
         options={constrained ? CONSTRAINT_MODE_OPTIONS : SIZE_MODE_OPTIONS}

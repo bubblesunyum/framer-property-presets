@@ -1,7 +1,7 @@
 .padding-field {
     display: flex;
     align-items: flex-start;
-    gap: 6px;
+    gap: 8px;
     width: 100%;
 }
 
@@ -9,15 +9,22 @@
 .padding-field-sides {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 6px;
+    gap: 8px;
     flex: 1;
     min-width: 0;
 }
 
 .padding-field-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 30px;
     height: 30px;
     flex-shrink: 0;
+    /* framer.css's generic `button` rule forces 10px/side padding by default — without
+       overriding it here, this small square button squeezes its icon down to a sliver
+       since the padding alone nearly consumes its whole width. */
+    padding: 0;
     background: var(--framer-color-bg-tertiary);
     color: var(--framer-color-text-tertiary);
     border-radius: 6px;

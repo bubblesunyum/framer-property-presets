@@ -25,7 +25,7 @@
        option, alignment grid). Framer's own "standard gray" selected look — a raised
        neutral pill — rather than the neon tint, which is reserved for primary actions
        and focus. */
-    --control-selected-bg: #2f2f3a;
+    --control-selected-bg: #4a4a52;
     --control-selected-fg: var(--framer-color-text);
 
     color-scheme: dark;

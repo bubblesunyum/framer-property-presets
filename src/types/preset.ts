@@ -1,4 +1,4 @@
-export type PropertyGroup = "position" | "size" | "layout"
+export type PropertyGroup = "position" | "size" | "layout" | "appearance"
 
 export type PresetLocation = "synced" | "local"
 
@@ -20,12 +20,12 @@ export type PresetPropertyKey =
     | "layout"
     | "gap"
     | "padding"
-    | "overflow"
     // Layout (stack)
     | "stackDirection"
     | "stackDistribution"
     | "stackAlignment"
     | "stackWrapEnabled"
+    | "zIndex"
     // Layout (grid)
     | "gridColumnCount"
     | "gridRowCount"
@@ -35,6 +35,11 @@ export type PresetPropertyKey =
     | "gridColumnMinWidth"
     | "gridRowHeightType"
     | "gridRowHeight"
+    // Appearance
+    | "overflow"
+    | "radius"
+    | "opacity"
+    | "visible"
 
 /** Sparse map: only keys the user chose to include are present. Heterogeneous value
  *  type here because it spans strings, numbers, and booleans depending on the key;

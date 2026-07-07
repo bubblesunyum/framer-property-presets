@@ -17,12 +17,44 @@
     padding: 14px 0;
 }
 
+.property-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 0 15px;
+    margin-bottom: 2px;
+}
+
 .property-section-heading {
     font-size: 12px;
     font-weight: 600;
     color: var(--framer-color-text);
-    padding: 0 15px;
-    margin-bottom: 2px;
+}
+
+.appearance-visibility-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    /* framer.css's generic `button` rule forces 10px/side padding by default — without
+       overriding it here, a small icon-only button like this one is squeezed down to a
+       hairline sliver since the padding alone nearly consumes its whole width. */
+    padding: 0;
+    background: none;
+    color: var(--framer-color-text-secondary);
+    opacity: 0.6;
+    transition: opacity 0.15s;
+}
+
+.appearance-visibility-toggle.is-included {
+    opacity: 1;
+}
+
+.appearance-visibility-toggle:hover {
+    color: var(--framer-color-text);
 }
 
 .property-section-empty {

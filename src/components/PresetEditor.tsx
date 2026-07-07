@@ -1,5 +1,5 @@
 import {supportsName, type CanvasNode} from 'framer-plugin'
-import {useState} from 'react'
+import {useEffect, useState} from 'react'
 import {captureFromNode} from '../canvas/capturePreset'
 import {useBufferedInput} from '../hooks/useBufferedInput'
 import {isExplicitValue} from '../schema/propertySchema'
@@ -77,13 +77,39 @@ export function PresetEditor(props: PresetEditorProps) {
       ? captureFromNode(props.node)
       : {
           name: props.preset.name,
-          // Presets saved before Clip Content existed won't have `overflow` at all —
-          // there's no live node here to re-check `supportsOverflow` against, so just
-          // assume it applies (applying to an incompatible node later is still
-          // filtered out by that guard in applyPreset.ts).
-          properties: withDefaults(props.preset.properties, {overflow: null}),
+          // Presets saved before a given field existed won't have its key at all —
+          // there's no live node here to re-check its guard against, so just assume it
+          // applies (applying to an incompatible node later is still filtered out by
+          // that guard in applyPreset.ts).
+          properties: withDefaults(props.preset.properties, {
+            overflow: null,
+            radius: null,
+            opacity: null,
+            visible: null,
+            zIndex: null,
+          }),
         },
   )
+  const [computedSize, setComputedSize] = useState<{width: number | null; height: number | null}>({
+    width: null,
+    height: null,
+  })
+
+  // Fetch the live node's actual rendered size once, for Width/Height's "Fit" display —
+  // create mode only, since edit mode has no live node to measure.
+  useEffect(() => {
+    if (props.mode !== 'create') return
+    let active = true
+    const node = props.node as {getRect?: () => Promise<{width: number; height: number} | null>}
+    void node.getRect?.().then((rect) => {
+      if (!active) return
+      setComputedSize({width: rect?.width ?? null, height: rect?.height ?? null})
+    })
+    return () => {
+      active = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const [initiallyIncluded] = useState<Set<PresetPropertyKey>>(() =>
     props.mode === 'create' ? computeInitiallyIncluded(draft.properties) : new Set(),
   )
@@ -130,6 +156,7 @@ export function PresetEditor(props: PresetEditorProps) {
       isIncluded,
       commit,
       onToggleIncluded: props.mode === 'edit' ? toggleIncluded : undefined,
+      computedSize: props.mode === 'create' ? computedSize : undefined,
     })
 
   const handleSave = async () => {
