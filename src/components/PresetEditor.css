@@ -11,8 +11,15 @@
   /* border-bottom: 1px solid var(--framer-color-divider); */
 }
 
+.preset-editor-name-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .preset-editor-name {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   font-weight: 600;
 }
 

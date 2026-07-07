@@ -18,12 +18,12 @@ export const EDITOR_ROWS: Record<PropertyGroup, EditorRow[]> = {
     size: [],
     layout: [
         // Direction is folded into the Flow control (Row/Column); Distribute + Align
-        // are folded into one alignment grid ("stackAlignment").
+        // are folded into one alignment grid ("stackAlignment"). Wrap is folded into a
+        // small toggle button underneath that same grid (see AlignmentGrid) — it no
+        // longer has its own row.
         "layout",
-        "gap",
-        "padding",
+        ["gap", "padding"],
         "stackAlignment",
-        "stackWrapEnabled",
         "zIndex",
         ["gridColumnCount", "gridRowCount"],
         "gridAlignment",
@@ -35,5 +35,6 @@ export const EDITOR_ROWS: Record<PropertyGroup, EditorRow[]> = {
     ],
     // "visible" is rendered specially, as an eye-icon toggle in the section's own
     // header (see AppearanceSection) — excluded from this row list for that reason.
-    appearance: ["overflow", "radius", "opacity"],
+    appearance: ["opacity", "radius", "overflow", "squircle"],
+    interaction: ["pointerEvents"],
 }

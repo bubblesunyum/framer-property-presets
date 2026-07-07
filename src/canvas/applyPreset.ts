@@ -24,7 +24,10 @@ export async function applyPresetToSelection(preset: Preset, selection: CanvasNo
 
             for (const key of Object.keys(preset.properties) as PresetPropertyKey[]) {
                 const descriptor = descriptorFor(key)
-                if (!descriptor || !descriptor.guard(node)) continue
+                // Synthetic fields (Squircle, Pointer Events) have no real attribute in
+                // the framer-plugin SDK — they're stored/edited like any other property
+                // but never sent to the real node.
+                if (!descriptor || descriptor.synthetic || !descriptor.guard(node)) continue
                 payload[key] = preset.properties[key]
             }
 
@@ -62,7 +65,7 @@ export async function applyAttributesToSelection(
 
             for (const key of Object.keys(changes) as PresetPropertyKey[]) {
                 const descriptor = descriptorFor(key)
-                if (!descriptor || !descriptor.guard(node)) continue
+                if (!descriptor || descriptor.synthetic || !descriptor.guard(node)) continue
                 payload[key] = changes[key]
             }
 

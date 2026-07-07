@@ -23,6 +23,16 @@
     opacity: 0.6;
 }
 
+/* An unset value (null) rather than a disabled one — e.g. an unpinned position edge or
+   an unset min/max constraint. Lighter dim than disabled since it's still editable. */
+.number-field.is-dim {
+    opacity: 0.55;
+}
+
+.number-field.is-compact.is-dim {
+    opacity: 0.7;
+}
+
 .number-field-label {
     flex-shrink: 0;
     margin-right: 6px;

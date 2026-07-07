@@ -13,6 +13,18 @@ export function captureFromNode(node: CanvasNode): DraftPreset {
         if (!descriptor.guard(node)) continue
         if (descriptor.visibleWhen && !descriptor.visibleWhen(properties)) continue
 
+        // Synthetic fields (Squircle, Pointer Events) have no real node attribute to
+        // read at all — Squircle defaults to 100% for every element; Pointer Events has
+        // no sensible default guess, so it stays unset until the user picks one.
+        if (descriptor.key === "squircle") {
+            properties[descriptor.key] = 100
+            continue
+        }
+        if (descriptor.synthetic) {
+            properties[descriptor.key] = null
+            continue
+        }
+
         // Always record the key once the guard says it applies to this node — even if
         // the live SDK value happens to come back `undefined` for some edge case (e.g.
         // a trait whose value is normally expressed via a different sibling property).

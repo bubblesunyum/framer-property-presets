@@ -7,8 +7,10 @@ type LengthMode = 'px' | '%' | 'fit-content' | 'fr'
 interface LengthFieldProps {
   value: string | null
   onChange: (value: string) => void
-  /** Restricts the mode picker to px/% — for Min/Max constraint fields, which (unlike
-   *  Width/Height) can never be "Fill" or "Fit Content" — see SizeLengthDescriptor. */
+  /** Min/Max constraints can never be "Fill" or "Fit Content" (the SDK's
+   *  WidthConstraint/HeightConstraint types have no fit-content/fr variant) — those two
+   *  options stay visible but disabled/grayed rather than disappearing, so the control
+   *  always shows the same 4 options everywhere. */
   constrained?: boolean
   /** The node's actual rendered pixel size — shown, disabled, in place of a real value
    *  while mode is "Fit" (which has no numeric value of its own). Only ever populated
@@ -20,11 +22,6 @@ interface LengthFieldProps {
 const SIZE_MODE_OPTIONS = [
   {value: 'fr', label: 'Fill'},
   {value: 'fit-content', label: 'Fit'},
-  {value: '%', label: '%'},
-  {value: 'px', label: 'px'},
-]
-
-const CONSTRAINT_MODE_OPTIONS = [
   {value: '%', label: '%'},
   {value: 'px', label: 'px'},
 ]
@@ -52,6 +49,13 @@ export function LengthField({value, onChange, constrained, computedPx}: LengthFi
   const parsed = parseLength(value)
   const isFit = parsed.mode === 'fit-content'
 
+  const setMode = (mode: LengthMode) => {
+    // A Fill value is a flex ratio, not a length — carrying over whatever number the
+    // field last held in px/% mode would read as a nonsensical flex ratio, so it always
+    // resets to 1 rather than keeping the old amount.
+    onChange(serializeLength(mode, mode === 'fr' ? 1 : parsed.amount))
+  }
+
   return (
     <div className='length-field'>
       <div className='length-field-value'>
@@ -59,15 +63,20 @@ export function LengthField({value, onChange, constrained, computedPx}: LengthFi
           value={isFit ? (computedPx ?? null) : parsed.amount}
           unit={isFit ? 'px' : parsed.mode}
           disabled={isFit}
+          dim={!isFit && parsed.amount == null}
           compact
+          showCarets
           onChange={(amount) => onChange(serializeLength(parsed.mode, amount))}
         />
       </div>
       <div className='length-field-divider' />
       <SegmentedControl
         value={parsed.mode}
-        options={constrained ? CONSTRAINT_MODE_OPTIONS : SIZE_MODE_OPTIONS}
-        onChange={(mode) => onChange(serializeLength(mode as LengthMode, parsed.amount))}
+        options={SIZE_MODE_OPTIONS.map((option) => ({
+          ...option,
+          disabled: constrained && (option.value === 'fr' || option.value === 'fit-content'),
+        }))}
+        onChange={(mode) => setMode(mode as LengthMode)}
       />
     </div>
   )

@@ -15,7 +15,7 @@ import {
 } from 'framer-plugin'
 import type {PresetProperties, PresetPropertyKey, PropertyGroup} from '../types/preset'
 
-export type IconSet = 'direction' | 'alignment' | 'distribution' | 'flow' | 'position' | 'overflow'
+export type IconSet = 'direction' | 'alignment' | 'distribution' | 'flow' | 'position' | 'overflow' | 'pointer-events'
 
 interface BaseDescriptor {
   key: PresetPropertyKey
@@ -30,6 +30,12 @@ interface BaseDescriptor {
   /** Render the control spanning the full row with no label column — for controls
    *  whose meaning is self-evident from their icons (Flow, Position). */
   fullWidth?: boolean
+  /** This field has no real backing attribute in the framer-plugin SDK (Squircle,
+   *  Pointer Events — neither exists in the installed SDK version) — it's captured/
+   *  edited/stored like any other property, but `applyPreset.ts`/`applyAttributesToSelection`
+   *  skip it when building a `setAttributes` payload, since sending an unrecognized key
+   *  to the real SDK is unverified territory. Revisit if a future SDK version adds one. */
+  synthetic?: boolean
 }
 
 export interface DimensionDescriptor extends BaseDescriptor {
@@ -105,6 +111,12 @@ export interface OpacityDescriptor extends BaseDescriptor {
   control: 'opacity'
 }
 
+/** A plain 0–100 value stored/shown as-is (no 0–1 conversion) — for synthetic,
+ *  preset-only percentages like Squircle that have no real SDK-side representation. */
+export interface PercentDescriptor extends BaseDescriptor {
+  control: 'percent'
+}
+
 export interface SelectOption {
   value: string
   label: string
@@ -139,6 +151,7 @@ export type PropertyDescriptor =
   | AlignGridDescriptor
   | StepperDescriptor
   | OpacityDescriptor
+  | PercentDescriptor
   | SelectDescriptor
   | SegmentedDescriptor
 
@@ -147,6 +160,21 @@ const isGrid = (properties: PresetProperties) => properties.layout === 'grid'
 // "None" is stored as `null`, not the string "none" — see the segmented-control's
 // null<->"none" mapping in PropertyRow.tsx#renderControl.
 const hasLayout = (properties: PresetProperties) => properties.layout != null
+
+// Widened on purpose: users have reported nodes where Framer's own panel lets them set
+// Z-Index but `supportsZIndex` alone came back false, hiding the whole Layout section
+// ("this layer doesn't support layout properties"). Any node capable of Flow is, per the
+// SDK's own EditableFrameNodeAttributes shape, also always capable of Z-Index — so treat
+// either guard passing as enough to show it. `applyPreset.ts` still re-checks the real
+// `supportsZIndex` before ever writing, so this can't cause a bad write, only a
+// too-eagerly-shown field on some exotic node type.
+const supportsZIndexOrLayout = (node: CanvasNode) => supportsZIndex(node) || supportsLayout(node)
+
+// Neither Squircle nor Pointer Events exist in the installed framer-plugin SDK version
+// (verified against its .d.ts — no `squircle`/`cornerSmoothing`/`pointerEvents` trait of
+// any kind). Both are preset-only UI values for now: always "supported" since there's no
+// real node capability to check, never written to a real node (see `synthetic` above).
+const alwaysSupported = () => true
 
 export const PROPERTY_SCHEMA: PropertyDescriptor[] = [
   // ---- Position ----
@@ -336,7 +364,7 @@ export const PROPERTY_SCHEMA: PropertyDescriptor[] = [
     label: 'Z-Index',
     control: 'stepper',
     nullable: true,
-    guard: supportsZIndex,
+    guard: supportsZIndexOrLayout,
   },
 
   // ---- Layout (grid-specific) ----
@@ -426,20 +454,13 @@ export const PROPERTY_SCHEMA: PropertyDescriptor[] = [
     visibleWhen: (p) => isGrid(p) && p.gridRowHeightType === 'fixed',
   },
 
-  // ---- Appearance ----
+  // ---- Appearance ---- (row order: Opacity, Radius, Overflow, Squircle)
   {
-    key: 'overflow',
+    key: 'opacity',
     group: 'appearance',
-    label: 'Overflow',
-    control: 'segmented',
-    iconSet: 'overflow',
-    guard: supportsOverflow,
-    options: [
-      {value: 'visible', label: 'Visible'},
-      {value: 'hidden', label: 'Hidden'},
-      {value: 'auto', label: 'Scroll'},
-      {value: 'clip', label: 'Clip'},
-    ],
+    label: 'Opacity',
+    control: 'opacity',
+    guard: supportsOpacity,
   },
   {
     key: 'radius',
@@ -451,11 +472,27 @@ export const PROPERTY_SCHEMA: PropertyDescriptor[] = [
     guard: supportsBorderRadius,
   },
   {
-    key: 'opacity',
+    key: 'overflow',
     group: 'appearance',
-    label: 'Opacity',
-    control: 'opacity',
-    guard: supportsOpacity,
+    label: 'Overflow',
+    control: 'segmented',
+    iconSet: 'overflow',
+    guard: supportsOverflow,
+    // Order was Visible/Hidden/Scroll/Clip — Clip and Hidden swapped per request.
+    options: [
+      {value: 'visible', label: 'Visible'},
+      {value: 'clip', label: 'Clip'},
+      {value: 'auto', label: 'Scroll'},
+      {value: 'hidden', label: 'Hidden'},
+    ],
+  },
+  {
+    key: 'squircle',
+    group: 'appearance',
+    label: 'Squircle',
+    control: 'percent',
+    guard: alwaysSupported,
+    synthetic: true,
   },
   {
     // Rendered specially, as an eye-icon toggle in the Appearance section's own header
@@ -466,6 +503,21 @@ export const PROPERTY_SCHEMA: PropertyDescriptor[] = [
     label: 'Visible',
     control: 'toggle',
     guard: supportsVisible,
+  },
+
+  // ---- Interaction ----
+  {
+    key: 'pointerEvents',
+    group: 'interaction',
+    label: 'Pointer Events',
+    control: 'segmented',
+    iconSet: 'pointer-events',
+    guard: alwaysSupported,
+    synthetic: true,
+    options: [
+      {value: 'auto', label: 'Auto'},
+      {value: 'none', label: 'None'},
+    ],
   },
 ]
 

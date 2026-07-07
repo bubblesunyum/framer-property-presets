@@ -16,15 +16,16 @@ type FieldPropsFor = (key: PresetPropertyKey) => FieldProps | null
 
 /** Renders the full property form for a single node's draft — one combined Position &
  *  Size section (position control + conditional pin cross + Width/Height axes), the
- *  Layout section, and an Appearance section. Shared verbatim between the preset editor
- *  and the live Design panel; the only difference is the `fieldProps` builder each
- *  hands in. */
+ *  Layout section, an Appearance section, and an Interaction section. Shared verbatim
+ *  between the preset editor and the live Design panel; the only difference is the
+ *  `fieldProps` builder each hands in. */
 export function PropertySections({fieldProps}: {fieldProps: FieldPropsFor}) {
   return (
     <>
       <PositionSizeSection fieldProps={fieldProps} />
       <LayoutSection fieldProps={fieldProps} />
       <AppearanceSection fieldProps={fieldProps} />
+      <InteractionSection fieldProps={fieldProps} />
     </>
   )
 }
@@ -76,7 +77,7 @@ function PositionSizeSection({fieldProps}: {fieldProps: FieldPropsFor}) {
 
   return (
     <Section title='Position & Size' isEmpty={!position && !hasPins && !hasSize}>
-      {position && <FullWidthControl field={position} />}
+      {position && <FullWidthControl field={position} extraClass='property-fullwidth-flow' />}
       {hasPins && (
         <div className='position-cross'>
           {pins.top && (
@@ -101,23 +102,115 @@ function PositionSizeSection({fieldProps}: {fieldProps: FieldPropsFor}) {
           )}
         </div>
       )}
-      {hasSize && (
-        <div className='size-axes'>
-          <SizeAxis main={width} min={fieldProps('minWidth')} max={fieldProps('maxWidth')} />
-          <SizeAxis main={height} min={fieldProps('minHeight')} max={fieldProps('maxHeight')} />
-        </div>
-      )}
+      {hasSize && <SizeAxes width={width} height={height} fieldProps={fieldProps} />}
     </Section>
   )
 }
 
+/** Width and Height side by side, with a lock toggle centered in the gap between them —
+ *  when locked, editing one proportionally scales the other to hold the ratio captured
+ *  at the moment it was locked. */
+function SizeAxes({width, height, fieldProps}: {width: FieldProps | null; height: FieldProps | null; fieldProps: FieldPropsFor}) {
+  const [locked, setLocked] = useState(false)
+  const [lockedRatio, setLockedRatio] = useState<number | null>(null)
+
+  const numericOf = (field: FieldProps | null) => {
+    const match = typeof field?.value === 'string' ? /^(-?\d*\.?\d+)/.exec(field.value) : null
+    return match ? Number(match[1]) : null
+  }
+
+  const toggleLock = () => {
+    if (!locked) {
+      const w = numericOf(width)
+      const h = numericOf(height)
+      setLockedRatio(w != null && h != null && h !== 0 ? w / h : null)
+    }
+    setLocked((prev) => !prev)
+  }
+
+  const linkedWidth: FieldProps | null = width && {
+    ...width,
+    onChange: (next) => {
+      width.onChange(next)
+      if (locked && lockedRatio != null) {
+        const nextAmount = numericOf({...width, value: next} as FieldProps)
+        if (nextAmount != null && height?.value != null && typeof height.value === 'string') {
+          const suffix = /[a-z%]+$/i.exec(height.value)?.[0] ?? 'px'
+          height.onChange(`${Math.round(nextAmount / lockedRatio)}${suffix}`)
+        }
+      }
+    },
+  }
+  const linkedHeight: FieldProps | null = height && {
+    ...height,
+    onChange: (next) => {
+      height.onChange(next)
+      if (locked && lockedRatio != null) {
+        const nextAmount = numericOf({...height, value: next} as FieldProps)
+        if (nextAmount != null && width?.value != null && typeof width.value === 'string') {
+          const suffix = /[a-z%]+$/i.exec(width.value)?.[0] ?? 'px'
+          width.onChange(`${Math.round(nextAmount * lockedRatio)}${suffix}`)
+        }
+      }
+    },
+  }
+
+  return (
+    <div className='size-axes'>
+      <SizeAxis main={linkedWidth} min={fieldProps('minWidth')} max={fieldProps('maxWidth')} />
+      <button
+        type='button'
+        className={locked ? 'size-axes-lock is-locked' : 'size-axes-lock'}
+        onClick={toggleLock}
+        title={locked ? 'Unlink width and height' : 'Lock aspect ratio'}
+        aria-label={locked ? 'Unlink width and height' : 'Lock aspect ratio'}
+      >
+        <LinkIcon locked={locked} />
+      </button>
+      <SizeAxis main={linkedHeight} min={fieldProps('minHeight')} max={fieldProps('maxHeight')} />
+    </div>
+  )
+}
+
+function LinkIcon({locked}: {locked: boolean}) {
+  if (locked) {
+    return (
+      <svg width='13' height='13' viewBox='0 0 13 13' fill='none'>
+        <path
+          d='M4.5 6.5v-2a2 2 0 1 1 4 0v2M4.5 6.5h4a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1z'
+          stroke='currentColor'
+          strokeWidth='1.2'
+          strokeLinejoin='round'
+        />
+      </svg>
+    )
+  }
+  return (
+    <svg width='13' height='13' viewBox='0 0 13 13' fill='none'>
+      <path
+        d='M4.5 5.2V4.5a2 2 0 1 1 4 0M4.5 6.5h4a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1z'
+        stroke='currentColor'
+        strokeWidth='1.2'
+        strokeLinejoin='round'
+        opacity='0.55'
+      />
+    </svg>
+  )
+}
+
 /** One dimension column: the Width/Height field, with its own Min/Max fields tucked
- *  behind a small "min/max" expander directly underneath — defaults open if either is
- *  already explicitly set, so a layer with real constraints shows them right away. */
+ *  behind a small expander directly underneath. The expander itself never auto-opens —
+ *  its own summary text ("min: 100px, max: –") already conveys whether constraints are
+ *  set without needing to expand, and its caret's left edge lines up with the
+ *  Width/Height label above it. */
 function SizeAxis({main, min, max}: {main: FieldProps | null; min: FieldProps | null; max: FieldProps | null}) {
-  const hasMinMax = Boolean(min || max)
-  const [open, setOpen] = useState(() => hasMinMax && (min?.value != null || max?.value != null))
+  const [open, setOpen] = useState(false)
   if (!main) return null
+  const hasMinMax = Boolean(min || max)
+
+  const summary = hasMinMax
+    ? `min: ${min && min.value != null ? min.value : '–'}, max: ${max && max.value != null ? max.value : '–'}`
+    : null
 
   return (
     <div className='size-axis'>
@@ -139,7 +232,7 @@ function SizeAxis({main, min, max}: {main: FieldProps | null; min: FieldProps | 
             onClick={() => setOpen((prev) => !prev)}
           >
             <ChevronIcon />
-            {!open && 'min/max'}
+            {!open && <span className='size-constraints-summary'>{summary}</span>}
           </button>
           {open && (
             <div className='size-axis-minmax'>
@@ -180,6 +273,15 @@ function AppearanceSection({fieldProps}: {fieldProps: FieldPropsFor}) {
       isEmpty={rows.length === 0 && !visible}
       headerAction={visible && <VisibilityToggle field={visible} />}
     >
+      {rows}
+    </Section>
+  )
+}
+
+function InteractionSection({fieldProps}: {fieldProps: FieldPropsFor}) {
+  const rows = renderRows(EDITOR_ROWS.interaction, fieldProps)
+  return (
+    <Section title='Interaction' isEmpty={rows.length === 0}>
       {rows}
     </Section>
   )
@@ -234,18 +336,17 @@ function EyeOffIcon() {
 
 /** A control that spans the whole row with no label column (Flow, Position) — its icons
  *  carry the meaning. Dims when excluded, same as a labelled row. */
-function FullWidthControl({field}: {field: FieldProps}) {
-  return (
-    <div className={field.included ? 'property-fullwidth is-included' : 'property-fullwidth'}>
-      {renderControl(field.descriptor, field.value, field.onChange)}
-    </div>
-  )
+function FullWidthControl({field, extraClass}: {field: FieldProps; extraClass?: string}) {
+  const classes = ['property-fullwidth']
+  if (field.included) classes.push('is-included')
+  if (extraClass) classes.push(extraClass)
+  return <div className={classes.join(' ')}>{renderControl(field.descriptor, field.value, field.onChange)}</div>
 }
 
 function ChevronIcon() {
   return (
-    <svg width='8' height='8' viewBox='0 0 8 8' fill='none'>
-      <path d='M2.5 1l3 3-3 3' stroke='currentColor' strokeWidth='1.3' strokeLinecap='round' strokeLinejoin='round' />
+    <svg width='7' height='7' viewBox='0 0 7 7' fill='none' className='size-constraints-chevron'>
+      <path d='M1.5.5l3 3-3 3' stroke='currentColor' strokeWidth='1.3' strokeLinecap='round' strokeLinejoin='round' />
     </svg>
   )
 }

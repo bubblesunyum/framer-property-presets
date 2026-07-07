@@ -48,10 +48,27 @@ export function DesignPanel({selection}: DesignPanelProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [primaryId])
 
+  // `framer-plugin` has no push-based "this node's attributes changed" subscription —
+  // only `subscribeToSelection`, which fires on a *selection* change, not an edit made
+  // within it. This is the best available substitute: poll the live node and pick up
+  // whatever changed, so an edit made in Framer's own panel shows up here too, not just
+  // edits made through this one. Skips the update if nothing actually changed, so a tick
+  // where the node is untouched doesn't force a re-render. Each NumberField already
+  // guards its own local buffer against being overwritten while it's focused (see
+  // NumberField's `isFocusedRef`), so a poll landing mid-edit can't stomp on a keystroke.
+  useEffect(() => {
+    if (!primary) return
+    const interval = window.setInterval(() => {
+      const fresh = captureFromNode(primary).properties
+      setProperties((prev) => (JSON.stringify(prev) === JSON.stringify(fresh) ? prev : fresh))
+    }, 600)
+    return () => window.clearInterval(interval)
+  }, [primary, primaryId])
+
   if (!primary) {
     return (
       <div className='design-panel-empty'>
-        <p>Select a layer on the canvas to edit its properties live.</p>
+        <p>Select a layer to edit its properties</p>
       </div>
     )
   }

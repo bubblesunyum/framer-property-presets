@@ -2,6 +2,7 @@ import type {CanvasNode} from 'framer-plugin'
 import {useState} from 'react'
 import {MainView} from './components/MainView'
 import {PresetEditor} from './components/PresetEditor'
+import {useEscapeToBlur} from './hooks/useEscapeToBlur'
 import {useSelection} from './hooks/useSelection'
 import type {Preset} from './types/preset'
 
@@ -13,6 +14,7 @@ type Screen =
 export function App() {
   const selection = useSelection()
   const [screen, setScreen] = useState<Screen>({kind: 'main'})
+  useEscapeToBlur()
 
   if (screen.kind === 'create') {
     return (

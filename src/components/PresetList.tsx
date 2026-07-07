@@ -1,14 +1,17 @@
 import type {CanvasNode} from 'framer-plugin'
-import {useEffect, useState} from 'react'
-import {loadAllPresets} from '../storage/presetRepository'
 import type {Preset} from '../types/preset'
 import './PresetList.css'
 import {PresetListItem} from './PresetListItem'
 
 interface PresetListProps {
+  presets: Preset[]
+  isLoading: boolean
+  refreshToken: number
   selection: CanvasNode[]
   onRequestNew: () => void
   onRequestEdit: (preset: Preset) => void
+  onMoved: (updated: Preset) => void
+  onDeleted: (id: string) => void
 }
 
 function PlusIcon() {
@@ -19,33 +22,16 @@ function PlusIcon() {
   )
 }
 
-export function PresetList({selection, onRequestNew, onRequestEdit}: PresetListProps) {
-  const [presets, setPresets] = useState<Preset[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [refreshToken, setRefreshToken] = useState(0)
-
-  useEffect(() => {
-    let active = true
-    void loadAllPresets().then((loaded) => {
-      if (!active) return
-      setPresets(loaded)
-      setIsLoading(false)
-    })
-    return () => {
-      active = false
-    }
-  }, [])
-
-  const handleMoved = (updated: Preset) => {
-    setPresets((prev) => prev.map((preset) => (preset.id === updated.id ? updated : preset)))
-    setRefreshToken((token) => token + 1)
-  }
-
-  const handleDeleted = (id: string) => {
-    setPresets((prev) => prev.filter((preset) => preset.id !== id))
-    setRefreshToken((token) => token + 1)
-  }
-
+export function PresetList({
+  presets,
+  isLoading,
+  refreshToken,
+  selection,
+  onRequestNew,
+  onRequestEdit,
+  onMoved,
+  onDeleted,
+}: PresetListProps) {
   const newDisabled = selection.length === 0
   const newButton = (
     <button
@@ -77,8 +63,8 @@ export function PresetList({selection, onRequestNew, onRequestEdit}: PresetListP
               preset={preset}
               selection={selection}
               refreshToken={refreshToken}
-              onMoved={handleMoved}
-              onDeleted={handleDeleted}
+              onMoved={onMoved}
+              onDeleted={onDeleted}
               onEdit={onRequestEdit}
             />
           ))

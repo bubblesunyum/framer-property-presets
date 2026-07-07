@@ -1,4 +1,4 @@
-export type PropertyGroup = "position" | "size" | "layout" | "appearance"
+export type PropertyGroup = "position" | "size" | "layout" | "appearance" | "interaction"
 
 export type PresetLocation = "synced" | "local"
 
@@ -40,11 +40,24 @@ export type PresetPropertyKey =
     | "radius"
     | "opacity"
     | "visible"
+    | "squircle"
+    // Interaction
+    | "pointerEvents"
 
 /** Sparse map: only keys the user chose to include are present. Heterogeneous value
  *  type here because it spans strings, numbers, and booleans depending on the key;
  *  the property schema narrows per-key at read/write time. */
 export type PresetProperties = Partial<Record<PresetPropertyKey, unknown>>
+
+/** Preset button identity — shown in the sticky preset row and in the editor's icon
+ *  picker. `icon` names one of PRESET_ICONS (see PresetIconPicker.tsx); `color` names
+ *  one of PRESET_COLORS. Both are UI-only — never applied to a canvas node. */
+export interface PresetAppearance {
+    icon: string
+    color: string
+}
+
+export const DEFAULT_PRESET_APPEARANCE: PresetAppearance = { icon: "square", color: "violet" }
 
 export interface Preset {
     id: string
@@ -53,6 +66,18 @@ export interface Preset {
     updatedAt: number
     properties: PresetProperties
     location: PresetLocation
+    icon: string
+    color: string
+}
+
+/** Presets saved before icon/color existed won't have either field — back them with
+ *  the same default every preset button falls back to, rather than rendering blank. */
+export function withPresetAppearanceDefaults(preset: Preset): Preset {
+    return {
+        ...preset,
+        icon: preset.icon ?? DEFAULT_PRESET_APPEARANCE.icon,
+        color: preset.color ?? DEFAULT_PRESET_APPEARANCE.color,
+    }
 }
 
 /** Working state for the New Preset screen. There's no explicit include/exclude

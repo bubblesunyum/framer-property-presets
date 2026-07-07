@@ -1,0 +1,56 @@
+.zindex-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+.zindex-slider {
+    position: relative;
+    width: 100%;
+    height: 16px;
+    display: flex;
+    align-items: center;
+}
+
+.zindex-slider input[type="range"] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background: none;
+    opacity: 0;
+    cursor: ew-resize;
+}
+
+.zindex-slider-dots {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    height: 2px;
+    background: var(--framer-color-bg-tertiary);
+    border-radius: 1px;
+    pointer-events: none;
+}
+
+.zindex-slider-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--framer-color-text-tertiary);
+    transform: translateX(0);
+}
+
+.zindex-slider-dot:first-child {
+    transform: translateX(1px);
+}
+
+.zindex-slider-dot:last-child {
+    transform: translateX(-1px);
+}
+
+.zindex-slider-dot.is-filled {
+    background: var(--control-selected-fg);
+}

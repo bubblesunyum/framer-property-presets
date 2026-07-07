@@ -41,6 +41,24 @@
     color: var(--framer-color-text);
 }
 
+/* Text-label controls (Fill/Fit/%/px, and similar) read slightly dimmer when unselected
+   than icon-based ones — icons already read clearly at full color; text benefits from
+   a touch more contrast between the active and inactive state. */
+.segmented-control.is-text .segmented-option:not(.is-active) {
+    color: var(--framer-color-text-tertiary);
+}
+
+.segmented-control.is-text .segmented-option:not(.is-active):hover {
+    color: var(--framer-color-text-secondary);
+}
+
+.segmented-option.is-disabled,
+.segmented-option.is-disabled:hover {
+    color: var(--framer-color-text-tertiary);
+    opacity: 0.4;
+    cursor: default;
+}
+
 .segmented-option.is-active {
     background: var(--control-selected-bg);
     color: var(--control-selected-fg);

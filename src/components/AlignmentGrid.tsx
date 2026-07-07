@@ -1,39 +1,37 @@
-import {useEffect, useRef, useState} from 'react'
-import {createPortal} from 'react-dom'
+import {useState} from 'react'
 import './AlignmentGrid.css'
 
 const ORDER = ['start', 'center', 'end'] as const
 type Order = (typeof ORDER)[number]
 
+const SPACE_OPTIONS = ['space-between', 'space-around', 'space-evenly'] as const
+
 /** Value the combined align + distribute grid reads: the two stack keys it writes,
- *  plus the stack direction it needs to know which grid axis maps to which key. */
+ *  plus the stack direction it needs to know which grid axis maps to which key, plus
+ *  Wrap — folded in here too since its toggle button now lives directly under the
+ *  grid's caret rather than as its own property row. */
 export interface AlignmentValue {
   direction: 'horizontal' | 'vertical'
   distribution: string | null
   alignment: string | null
+  wrapEnabled: boolean
 }
+
+export type AlignmentChange = {distribution: string; alignment: string} | {wrapEnabled: boolean}
 
 interface AlignmentGridProps {
   value: AlignmentValue
-  onChange: (next: {distribution: string; alignment: string}) => void
+  onChange: (next: AlignmentChange) => void
 }
 
-const SPACE_OPTIONS = [
-  {value: 'space-between', label: 'Space Between'},
-  {value: 'space-around', label: 'Space Around'},
-  {value: 'space-evenly', label: 'Space Evenly'},
-]
-
-/** Framer-style combined align + distribute picker: one 3×3 grid that sets both the
- *  main-axis position (distribution) and the cross-axis position (alignment) of a
- *  stack in a single click. Which axis is which depends on direction — for a row the
- *  columns are distribution and the rows are alignment; for a column it's flipped.
- *  Only start/center/end are reachable through the grid itself; the three space-*
- *  distributions live behind the settings menu beside it and swap the grid out for a
- *  dedicated visualization once picked (see SpaceVisualization below). */
+/** Framer-style combined align + distribute picker: a 3×3 grid sets both the main-axis
+ *  position (distribution) and cross-axis position (alignment) of a stack in one click.
+ *  The right caret slides that grid out and a second panel in — 3 selectable
+ *  representations of the space-between/around/evenly distributions the 3×3 grid can't
+ *  express — and flips 180° to slide back. A Wrap toggle sits underneath the caret. */
 export function AlignmentGrid({value, onChange}: AlignmentGridProps) {
-  const {direction, distribution, alignment} = value
-  const isSpaceMode = typeof distribution === 'string' && distribution.startsWith('space-')
+  const {direction, distribution, alignment, wrapEnabled} = value
+  const [showAlternates, setShowAlternates] = useState(false)
 
   const cellValue = (col: number, row: number) =>
     direction === 'horizontal'
@@ -51,14 +49,8 @@ export function AlignmentGrid({value, onChange}: AlignmentGridProps) {
 
   return (
     <div className='alignment-grid-row'>
-      <div className='alignment-grid-area'>
-        {isSpaceMode ? (
-          <SpaceVisualization
-            distribution={distribution}
-            direction={direction}
-            onClear={() => onChange({distribution: 'start', alignment: alignment ?? 'start'})}
-          />
-        ) : (
+      <div className='alignment-slider'>
+        <div className={showAlternates ? 'alignment-slide is-away' : 'alignment-slide'}>
           <div className='alignment-grid' role='grid'>
             {Array.from({length: 9}, (_, i) => {
               const row = Math.floor(i / 3)
@@ -78,9 +70,43 @@ export function AlignmentGrid({value, onChange}: AlignmentGridProps) {
               )
             })}
           </div>
-        )}
+        </div>
+        <div className={showAlternates ? 'alignment-slide is-alternates' : 'alignment-slide is-alternates is-away-right'}>
+          <div className='alignment-alternates'>
+            {SPACE_OPTIONS.map((option) => (
+              <button
+                key={option}
+                type='button'
+                className={distribution === option ? 'alignment-alt-cell is-selected' : 'alignment-alt-cell'}
+                onClick={() => onChange({distribution: option, alignment: alignment ?? 'start'})}
+                title={option.replace('space-', 'Space ')}
+              >
+                <SpaceBars distribution={option} direction={direction} />
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
-      <AlignmentSettingsMenu onSelect={(dist) => onChange({distribution: dist, alignment: alignment ?? 'start'})} />
+      <div className='alignment-side-buttons'>
+        <button
+          type='button'
+          className={showAlternates ? 'alignment-caret is-flipped' : 'alignment-caret'}
+          onClick={() => setShowAlternates((prev) => !prev)}
+          title={showAlternates ? 'Back to start/center/end' : 'More distribute options'}
+          aria-label={showAlternates ? 'Back to start/center/end' : 'More distribute options'}
+        >
+          <CaretRightIcon />
+        </button>
+        <button
+          type='button'
+          className={wrapEnabled ? 'alignment-wrap-toggle is-active' : 'alignment-wrap-toggle'}
+          onClick={() => onChange({wrapEnabled: !wrapEnabled})}
+          title={wrapEnabled ? 'Wrap: on' : 'Wrap: off'}
+          aria-label={wrapEnabled ? 'Disable wrap' : 'Enable wrap'}
+        >
+          <WrapIcon />
+        </button>
+      </div>
     </div>
   )
 }
@@ -113,112 +139,44 @@ function Bars({direction}: {direction: 'horizontal' | 'vertical'}) {
  *  the edges half a gap, space-evenly gives every gap, including the edges, the same
  *  size). */
 const SPACE_POSITIONS: Record<string, [number, number, number]> = {
-  'space-between': [4, 50, 96],
-  'space-around': [17, 50, 83],
-  'space-evenly': [25, 50, 75],
+  'space-between': [8, 50, 92],
+  'space-around': [20, 50, 80],
+  'space-evenly': [27, 50, 73],
 }
 
-function SpaceVisualization({
-  distribution,
-  direction,
-  onClear,
-}: {
-  distribution: string
-  direction: 'horizontal' | 'vertical'
-  onClear: () => void
-}) {
+function SpaceBars({distribution, direction}: {distribution: string; direction: 'horizontal' | 'vertical'}) {
   const positions = SPACE_POSITIONS[distribution] ?? SPACE_POSITIONS['space-evenly']
   return (
-    <div className='alignment-space-viz'>
+    <div className='alignment-alt-bars'>
       {positions.map((pct, i) => (
         <span
           key={i}
-          className={direction === 'horizontal' ? 'alignment-space-bar is-horizontal' : 'alignment-space-bar is-vertical'}
+          className={direction === 'horizontal' ? 'alignment-alt-bar is-horizontal' : 'alignment-alt-bar is-vertical'}
           style={direction === 'horizontal' ? {left: `${pct}%`} : {top: `${pct}%`}}
         />
       ))}
-      <button type='button' className='alignment-space-clear' onClick={onClear}>
-        Clear
-      </button>
     </div>
   )
 }
 
-function SettingsIcon() {
+function CaretRightIcon() {
   return (
-    <svg width='14' height='14' viewBox='0 0 14 14' fill='none'>
-      <circle cx='7' cy='2.5' r='1.3' fill='currentColor' />
-      <circle cx='7' cy='7' r='1.3' fill='currentColor' />
-      <circle cx='7' cy='11.5' r='1.3' fill='currentColor' />
+    <svg width='8' height='8' viewBox='0 0 8 8' fill='none'>
+      <path d='M2 .8l3 3.2-3 3.2' stroke='currentColor' strokeWidth='1.3' strokeLinecap='round' strokeLinejoin='round' />
     </svg>
   )
 }
 
-/** Small icon-button + portaled popover offering the three distribute options the 3×3
- *  grid can't express (space-between/around/evenly) — same portal/position/outside-
- *  click pattern as Dropdown.tsx. */
-function AlignmentSettingsMenu({onSelect}: {onSelect: (value: string) => void}) {
-  const [position, setPosition] = useState<{top: number; left: number} | null>(null)
-  const triggerRef = useRef<HTMLButtonElement>(null)
-  const listRef = useRef<HTMLDivElement>(null)
-
-  const isOpen = position !== null
-  const close = () => setPosition(null)
-  const open = () => {
-    const rect = triggerRef.current?.getBoundingClientRect()
-    if (!rect) return
-    setPosition({top: rect.bottom + 4, left: Math.max(8, rect.right - 168)})
-  }
-
-  useEffect(() => {
-    if (!isOpen) return
-    const handlePointerDown = (event: MouseEvent) => {
-      const target = event.target as Node
-      if (listRef.current?.contains(target) || triggerRef.current?.contains(target)) return
-      close()
-    }
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') close()
-    }
-    window.addEventListener('mousedown', handlePointerDown)
-    window.addEventListener('keydown', handleKeyDown)
-    return () => {
-      window.removeEventListener('mousedown', handlePointerDown)
-      window.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [isOpen])
-
+function WrapIcon() {
   return (
-    <>
-      <button
-        type='button'
-        ref={triggerRef}
-        className='alignment-settings-trigger'
-        onClick={() => (isOpen ? close() : open())}
-        title='More distribute options'
-        aria-label='More distribute options'
-      >
-        <SettingsIcon />
-      </button>
-      {position &&
-        createPortal(
-          <div ref={listRef} className='alignment-settings-list' style={{top: position.top, left: position.left}}>
-            {SPACE_OPTIONS.map((option) => (
-              <button
-                key={option.value}
-                type='button'
-                className='alignment-settings-option'
-                onClick={() => {
-                  onSelect(option.value)
-                  close()
-                }}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>,
-          document.body
-        )}
-    </>
+    <svg width='14' height='14' viewBox='0 0 14 14' fill='none'>
+      <path
+        d='M1.5 4h8.5a2 2 0 0 1 0 4H7M1.5 4l2.2-2M1.5 4l2.2 2M1.5 10h8.5a2 2 0 0 0 0-4'
+        stroke='currentColor'
+        strokeWidth='1.2'
+        strokeLinecap='round'
+        strokeLinejoin='round'
+      />
+    </svg>
   )
 }

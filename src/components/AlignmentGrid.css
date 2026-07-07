@@ -5,21 +5,51 @@
     width: 100%;
 }
 
-.alignment-grid-area {
+.alignment-slider {
+    position: relative;
     flex: 1;
     min-width: 0;
+    height: 62px;
+    overflow: hidden;
+    border-radius: 8px;
 }
 
-.alignment-grid {
+.alignment-slide {
+    position: absolute;
+    inset: 0;
+    transition: transform 0.28s ease;
+    transform: translateX(0);
+}
+
+/* The 3×3 grid slides fully out to the left once the alternates panel takes over. */
+.alignment-slide.is-away {
+    transform: translateX(-100%);
+}
+
+/* The alternates panel starts parked off-screen to the right, and slides in as
+   `is-alternates` alone (once `is-away-right` is dropped). */
+.alignment-slide.is-alternates.is-away-right {
+    transform: translateX(100%);
+}
+
+.alignment-slide.is-alternates:not(.is-away-right) {
+    transform: translateX(0);
+}
+
+.alignment-grid,
+.alignment-alternates {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(3, 1fr);
     width: 100%;
-    height: 62px;
+    height: 100%;
     background: var(--framer-color-bg-tertiary);
     border-radius: 8px;
     padding: 4px;
     gap: 2px;
+}
+
+.alignment-grid {
+    grid-template-rows: repeat(3, 1fr);
 }
 
 .alignment-cell {
@@ -61,105 +91,96 @@
     display: block;
 }
 
-/* Settings trigger sits beside the grid/visualization, top-aligned with it. */
-.alignment-settings-trigger {
+/* The 3 remaining distribute options, one cell each. */
+.alignment-alt-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 0;
+    padding: 0;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 5px;
+    color: var(--framer-color-text-tertiary);
+    transition:
+        background-color 0.12s,
+        color 0.12s;
+}
+
+.alignment-alt-cell:hover {
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--framer-color-text-secondary);
+}
+
+.alignment-alt-cell.is-selected,
+.alignment-alt-cell.is-selected:hover {
+    background: var(--control-selected-bg);
+    color: var(--control-selected-fg);
+}
+
+.alignment-alt-bars {
+    position: relative;
+    width: 26px;
+    height: 26px;
+}
+
+.alignment-alt-bar {
+    position: absolute;
+    background: currentColor;
+    border-radius: 1px;
+}
+
+.alignment-alt-bar.is-horizontal {
+    top: 9px;
+    width: 2px;
+    height: 8px;
+    transform: translateX(-50%);
+}
+
+.alignment-alt-bar.is-vertical {
+    left: 50%;
+    width: 8px;
+    height: 2px;
+    transform: translate(-50%, -50%);
+}
+
+/* Caret (top) + Wrap toggle (underneath) stacked beside the slider, both top-aligned
+   with it. */
+.alignment-side-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.alignment-caret,
+.alignment-wrap-toggle {
     display: flex;
     align-items: center;
     justify-content: center;
     width: 30px;
     height: 30px;
-    flex-shrink: 0;
-    /* framer.css's generic `button` rule forces 10px/side padding by default — without
-       overriding it here, this small square button squeezes its icon down to a sliver
-       since the padding alone nearly consumes its whole width. */
     padding: 0;
     background: var(--framer-color-bg-tertiary);
     color: var(--framer-color-text-tertiary);
     border-radius: 6px;
+    flex-shrink: 0;
 }
 
-.alignment-settings-trigger:hover {
-    color: var(--framer-color-text);
-}
-
-.alignment-settings-list {
-    position: fixed;
-    min-width: 160px;
-    background: var(--framer-color-bg-secondary);
-    border: 1px solid var(--framer-color-divider);
-    border-radius: 10px;
-    padding: 6px;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
-    z-index: 1000;
-}
-
-.alignment-settings-option {
-    width: 100%;
-    height: 30px;
-    padding: 0 10px;
-    justify-content: flex-start;
-    background: none;
+.alignment-caret:hover,
+.alignment-wrap-toggle:hover {
     color: var(--framer-color-text-secondary);
-    font-weight: 500;
-    border-radius: 6px;
-    white-space: nowrap;
-    text-align: left;
 }
 
-.alignment-settings-option:hover {
-    background: var(--framer-color-bg-tertiary);
-    color: var(--framer-color-text);
+.alignment-caret svg {
+    transition: transform 0.25s ease;
 }
 
-/* Replaces the 3×3 grid once a space-* distribution is picked — same footprint, a
-   centered illustration of the pattern plus a small "clear" button back to the grid. */
-.alignment-space-viz {
-    position: relative;
-    width: 100%;
-    height: 62px;
-    background: var(--framer-color-bg-tertiary);
-    border-radius: 8px;
+.alignment-caret.is-flipped svg {
+    transform: rotate(180deg);
 }
 
-.alignment-space-bar {
-    position: absolute;
-    background: var(--control-selected-fg);
-    border-radius: 1.2px;
-}
-
-.alignment-space-bar.is-horizontal {
-    top: 14px;
-    width: 2.4px;
-    height: 16px;
-    transform: translateX(-50%);
-}
-
-.alignment-space-bar.is-vertical {
-    left: 50%;
-    width: 16px;
-    height: 2.4px;
-    transform: translate(-50%, -50%);
-}
-
-.alignment-space-clear {
-    position: absolute;
-    bottom: 4px;
-    left: 50%;
-    transform: translateX(-50%);
-    height: auto;
-    min-height: 0;
-    padding: 2px 8px;
-    background: none;
-    color: var(--framer-color-text-tertiary);
-    font-size: 10px;
-    font-weight: 500;
-    border-radius: 4px;
-}
-
-.alignment-space-clear:hover {
-    color: var(--framer-color-text-secondary);
-    background: rgba(255, 255, 255, 0.05);
+.alignment-wrap-toggle.is-active {
+    background: var(--control-selected-bg);
+    color: var(--control-selected-fg);
 }

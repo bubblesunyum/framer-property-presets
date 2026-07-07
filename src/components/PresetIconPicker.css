@@ -1,0 +1,106 @@
+.preset-icon-picker-trigger {
+    display: inline-flex;
+}
+
+.preset-icon-picker {
+    position: fixed;
+    width: 220px;
+    background: var(--framer-color-bg-secondary);
+    border: 1px solid var(--framer-color-divider);
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+    z-index: 1000;
+}
+
+.preset-icon-picker-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--framer-color-text-secondary);
+    margin: 2px 0 0;
+}
+
+.preset-icon-picker-swatches {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+}
+
+.preset-color-swatch {
+    width: 100%;
+    height: 24px;
+    padding: 0;
+    border-radius: 6px;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+.preset-color-swatch.is-active {
+    box-shadow:
+        inset 0 0 0 2px var(--framer-color-bg-secondary),
+        0 0 0 2px currentColor;
+}
+
+.preset-icon-picker-colormap {
+    width: 100%;
+    height: 108px;
+    border-radius: 8px;
+    cursor: crosshair;
+    background:
+        linear-gradient(to bottom, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 1)),
+        linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
+}
+
+.preset-icon-picker-icons {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+}
+
+.preset-icon-swatch {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 30px;
+    padding: 0;
+    background: var(--framer-color-bg-tertiary);
+    color: var(--framer-color-text-secondary);
+    border-radius: 6px;
+}
+
+.preset-icon-swatch:hover {
+    color: var(--framer-color-text);
+}
+
+.preset-icon-swatch.is-active {
+    background: var(--control-selected-bg);
+    color: var(--control-selected-fg);
+}
+
+.preset-icon-picker-expand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-self: center;
+    width: 28px;
+    height: 16px;
+    padding: 0;
+    background: none;
+    color: var(--framer-color-text-tertiary);
+    margin: -2px 0 0;
+}
+
+.preset-icon-picker-expand:hover {
+    color: var(--framer-color-text-secondary);
+}
+
+.preset-icon-picker-expand svg {
+    transition: transform 0.15s;
+}
+
+.preset-icon-picker-expand.is-open svg {
+    transform: rotate(180deg);
+}

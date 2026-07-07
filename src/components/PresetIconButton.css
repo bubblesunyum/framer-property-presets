@@ -1,0 +1,18 @@
+.preset-icon-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    padding: 0;
+    border-radius: 14px;
+    transition: transform 0.1s;
+}
+
+.preset-icon-button:hover {
+    transform: translateY(-1px);
+}
+
+.preset-icon-button svg {
+    width: 45%;
+    height: 45%;
+}

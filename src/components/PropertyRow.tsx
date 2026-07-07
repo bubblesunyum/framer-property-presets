@@ -3,12 +3,12 @@ import { AlignmentGrid, type AlignmentValue } from "./AlignmentGrid"
 import { Dropdown } from "./Dropdown"
 import { LengthField } from "./LengthField"
 import { NumberField } from "./NumberField"
-import { NumberStepper } from "./NumberStepper"
 import { PaddingField } from "./PaddingField"
 import "./PropertyRow.css"
 import { SegmentedControl } from "./SegmentedControl"
 import { TextField } from "./TextField"
 import { ToggleSwitch } from "./ToggleSwitch"
+import { ZIndexField } from "./ZIndexField"
 
 export interface FieldProps {
     descriptor: PropertyDescriptor
@@ -38,6 +38,17 @@ function parseNumeric(raw: unknown): number | null {
     return null
 }
 
+/** A compact number field doesn't stretch to fill its row, leaving dead space to its
+ *  right — clicking that space should still activate the field rather than doing
+ *  nothing. Only acts when the click landed on the wrapper itself (empty space), not on
+ *  a nested control the click already reached natively. */
+function activateNestedFieldOnEmptyClick(event: React.MouseEvent<HTMLElement>) {
+    if (event.target !== event.currentTarget) return
+    const input = event.currentTarget.querySelector<HTMLInputElement>(".number-field-input")
+    input?.focus()
+    input?.select()
+}
+
 export function renderControl(
     descriptor: PropertyDescriptor,
     value: unknown,
@@ -55,6 +66,9 @@ export function renderControl(
                     // it doesn't stretch to fill its row; side-labelled ones (pins) size
                     // via their own cross/pair layout instead.
                     compact={!descriptor.displaySuffix}
+                    dim={value == null}
+                    showCarets
+                    dragSensitivity={descriptor.key === "radius" ? 0.4 : 1}
                     onChange={(next) => onChange(`${next}${descriptor.unit}`)}
                 />
             )
@@ -69,7 +83,13 @@ export function renderControl(
             )
         case "number":
             return (
-                <NumberField value={typeof value === "number" ? value : null} min={descriptor.min} onChange={onChange} />
+                <NumberField
+                    value={typeof value === "number" ? value : null}
+                    min={descriptor.min}
+                    dim={value == null}
+                    showCarets
+                    onChange={onChange}
+                />
             )
         case "length":
             return (
@@ -93,12 +113,7 @@ export function renderControl(
             return <ToggleSwitch checked={Boolean(value)} onChange={onChange} />
         case "stepper":
             return (
-                <NumberStepper
-                    value={typeof value === "number" ? value : null}
-                    min={descriptor.min}
-                    max={descriptor.max}
-                    onChange={onChange}
-                />
+                <ZIndexField value={typeof value === "number" ? value : null} onChange={onChange} />
             )
         case "opacity": {
             // Stored as a plain 0–1 fraction; shown/edited as a 0–100 percentage.
@@ -110,10 +125,25 @@ export function renderControl(
                     min={0}
                     max={100}
                     compact
+                    dim={value == null}
+                    showCarets
+                    dragSensitivity={1.5}
                     onChange={(next) => onChange(next / 100)}
                 />
             )
         }
+        case "percent":
+            return (
+                <NumberField
+                    value={typeof value === "number" ? value : null}
+                    unit="%"
+                    min={0}
+                    max={100}
+                    compact
+                    showCarets
+                    onChange={onChange}
+                />
+            )
         case "yes-no":
             return (
                 <SegmentedControl
@@ -169,7 +199,9 @@ export function PropertyRow({ descriptor, value, included, onChange, onToggleInc
             >
                 {descriptor.label}
             </label>
-            <div className="property-row-control">{renderControl(descriptor, value, onChange, computedPx)}</div>
+            <div className="property-row-control" onClick={activateNestedFieldOnEmptyClick}>
+                {renderControl(descriptor, value, onChange, computedPx)}
+            </div>
         </div>
     )
 }
@@ -178,7 +210,7 @@ export function PropertyRow({ descriptor, value, included, onChange, onToggleInc
  *  the field's identity is already conveyed some other way (e.g. an inline suffix). */
 export function PropertyControlOnly({ descriptor, value, included, onChange, computedPx }: FieldProps) {
     return (
-        <div className={included ? "control-only is-included" : "control-only"}>
+        <div className={included ? "control-only is-included" : "control-only"} onClick={activateNestedFieldOnEmptyClick}>
             {renderControl(descriptor, value, onChange, computedPx)}
         </div>
     )

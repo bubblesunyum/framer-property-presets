@@ -69,15 +69,15 @@ export function PaddingField({ value, onChange }: PaddingFieldProps) {
         <div className="padding-field">
             {expanded ? (
                 <div className="padding-field-sides">
-                    <NumberField value={sides.left} leftLabel="L" unit="px" onChange={(next) => setSide("left", next)} />
-                    <NumberField value={sides.top} leftLabel="T" unit="px" onChange={(next) => setSide("top", next)} />
-                    <NumberField value={sides.right} leftLabel="R" unit="px" onChange={(next) => setSide("right", next)} />
-                    <NumberField value={sides.bottom} leftLabel="B" unit="px" onChange={(next) => setSide("bottom", next)} />
+                    <NumberField value={sides.left} leftLabel="L" unit="px" showCarets onChange={(next) => setSide("left", next)} />
+                    <NumberField value={sides.top} leftLabel="T" unit="px" showCarets onChange={(next) => setSide("top", next)} />
+                    <NumberField value={sides.right} leftLabel="R" unit="px" showCarets onChange={(next) => setSide("right", next)} />
+                    <NumberField value={sides.bottom} leftLabel="B" unit="px" showCarets onChange={(next) => setSide("bottom", next)} />
                 </div>
             ) : (
                 <div className="padding-field-axes">
-                    <NumberField value={sides.top} leftLabel="V" unit="px" onChange={(next) => setAxis("vertical", next)} />
-                    <NumberField value={sides.left} leftLabel="H" unit="px" onChange={(next) => setAxis("horizontal", next)} />
+                    <NumberField value={sides.left} leftLabel="H" unit="px" showCarets onChange={(next) => setAxis("horizontal", next)} />
+                    <NumberField value={sides.top} leftLabel="V" unit="px" showCarets onChange={(next) => setAxis("vertical", next)} />
                 </div>
             )}
             <button

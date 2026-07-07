@@ -74,6 +74,11 @@
     opacity: 1;
 }
 
+/* 1.5x the section's normal 8px row gap below Flow specifically. */
+.property-fullwidth-flow {
+    margin-bottom: 4px;
+}
+
 .position-cross {
     display: flex;
     flex-direction: column;
@@ -99,13 +104,44 @@
     min-width: 0;
 }
 
-/* Width / Height side by side, each its own column with a Min/Max expander. */
+/* Width / Height side by side, each its own column with a Min/Max expander. Relative
+   positioning lets the lock toggle sit centered in the gap, half-overlapping both
+   columns, rather than claiming a gutter column of its own. */
 .size-axes {
+    position: relative;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 8px;
     padding: 0 15px;
     align-items: start;
+}
+
+.size-axes-lock {
+    position: absolute;
+    left: 50%;
+    /* Vertically centered on the value box's row (below the Width/Height label). */
+    top: 33px;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--framer-color-bg-tertiary);
+    border: 1px solid var(--framer-color-bg);
+    border-radius: 50%;
+    color: var(--framer-color-text-tertiary);
+    z-index: 1;
+}
+
+.size-axes-lock:hover {
+    color: var(--framer-color-text-secondary);
+}
+
+.size-axes-lock.is-locked {
+    color: var(--control-selected-fg);
+    background: var(--control-selected-bg);
 }
 
 .size-axis {
@@ -124,9 +160,10 @@
     opacity: 1;
 }
 
+/* Min/Max side by side (matches the reference layout), not stacked. */
 .size-axis-minmax {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 6px;
 }
 
@@ -138,6 +175,8 @@
     height: auto;
     min-height: 0;
     margin: 0;
+    /* No left padding — the chevron's own left edge lines up with the Width/Height
+       label above it (the icon's path also starts flush at x=1.5, not further inset). */
     padding: 2px 0;
     background: none;
     border: none;
@@ -146,16 +185,25 @@
     font-weight: 500;
     cursor: pointer;
     transition: color 0.15s;
+    max-width: 100%;
 }
 
 .size-constraints-toggle:hover {
     color: var(--framer-color-text-secondary);
 }
 
-.size-constraints-toggle svg {
+.size-constraints-chevron {
+    flex-shrink: 0;
     transition: transform 0.15s;
 }
 
-.size-constraints-toggle[aria-expanded='true'] svg {
-    transform: rotate(90deg);
+/* Points right when collapsed, up when expanded (not down). */
+.size-constraints-toggle[aria-expanded='true'] .size-constraints-chevron {
+    transform: rotate(-90deg);
+}
+
+.size-constraints-summary {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }

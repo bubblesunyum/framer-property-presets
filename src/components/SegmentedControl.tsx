@@ -4,6 +4,10 @@ import "./SegmentedControl.css"
 interface Option {
     value: string
     label: string
+    /** Kept visible but non-interactive and grayed further than a normal unselected
+     *  option — for a mode that doesn't apply to the current context (e.g. Fill/Fit on
+     *  a Min/Max constraint field) rather than hiding it outright. */
+    disabled?: boolean
 }
 
 interface SegmentedControlProps {
@@ -15,19 +19,31 @@ interface SegmentedControlProps {
 }
 
 function FlowIcon({ value }: { value: string }) {
+    // Row/Column read as a plain left-right / up-down double-headed arrow — the two
+    // boxes case below (grid/none) is unambiguous enough without needing arrows.
     if (value === "row") {
         return (
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <rect x="2" y="2" width="5" height="12" rx="1" stroke="currentColor" strokeWidth="1.3" />
-                <rect x="9" y="2" width="5" height="12" rx="1" stroke="currentColor" strokeWidth="1.3" />
+                <path
+                    d="M1.5 8h13M1.5 8l2.8-2.8M1.5 8l2.8 2.8M14.5 8l-2.8-2.8M14.5 8l-2.8 2.8"
+                    stroke="currentColor"
+                    strokeWidth="1.3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                />
             </svg>
         )
     }
     if (value === "column") {
         return (
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <rect x="2" y="2.5" width="12" height="3.5" rx="1" stroke="currentColor" strokeWidth="1.3" />
-                <rect x="2" y="10" width="12" height="3.5" rx="1" stroke="currentColor" strokeWidth="1.3" />
+                <path
+                    d="M8 1.5v13M8 1.5 5.2 4.3M8 1.5l2.8 2.8M8 14.5 5.2 11.7M8 14.5l2.8-2.8"
+                    stroke="currentColor"
+                    strokeWidth="1.3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                />
             </svg>
         )
     }
@@ -124,6 +140,29 @@ function OverflowIcon({ value }: { value: string }) {
     )
 }
 
+function PointerEventsIcon({ value }: { value: string }) {
+    if (value === "none") {
+        return (
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path
+                    d="M5 2.5 5.6 11l2-1.7 1.4 3 1.4-.6-1.4-3 2.6-.4L5 2.5z"
+                    stroke="currentColor"
+                    strokeWidth="1.1"
+                    strokeLinejoin="round"
+                    opacity="0.45"
+                />
+                <path d="M2.5 2.5l11 11" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+            </svg>
+        )
+    }
+    // auto — a plain cursor/pointer, clickable
+    return (
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M5 2.5 5.6 11l2-1.7 1.4 3 1.4-.6-1.4-3 2.6-.4L5 2.5z" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round" />
+        </svg>
+    )
+}
+
 function DirectionIcon({ value }: { value: string }) {
     return value === "vertical" ? (
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -189,25 +228,33 @@ function Icon({ iconSet, value }: { iconSet: NonNullable<SegmentedControlProps["
     if (iconSet === "flow") return <FlowIcon value={value} />
     if (iconSet === "position") return <PositionIcon value={value} />
     if (iconSet === "overflow") return <OverflowIcon value={value} />
+    if (iconSet === "pointer-events") return <PointerEventsIcon value={value} />
     return <DistributionIcon value={value} />
 }
 
 export function SegmentedControl({ value, onChange, options, iconSet }: SegmentedControlProps) {
     return (
-        <div className="segmented-control" role="radiogroup">
-            {options.map((option) => (
-                <button
-                    key={option.value}
-                    type="button"
-                    role="radio"
-                    aria-checked={value === option.value}
-                    title={option.label}
-                    className={value === option.value ? "segmented-option is-active" : "segmented-option"}
-                    onClick={() => onChange(option.value)}
-                >
-                    {iconSet ? <Icon iconSet={iconSet} value={option.value} /> : <span>{option.label}</span>}
-                </button>
-            ))}
+        <div className={iconSet ? "segmented-control" : "segmented-control is-text"} role="radiogroup">
+            {options.map((option) => {
+                const isActive = value === option.value
+                const classes = ["segmented-option"]
+                if (isActive) classes.push("is-active")
+                if (option.disabled) classes.push("is-disabled")
+                return (
+                    <button
+                        key={option.value}
+                        type="button"
+                        role="radio"
+                        aria-checked={isActive}
+                        aria-disabled={option.disabled}
+                        title={option.label}
+                        className={classes.join(" ")}
+                        onClick={() => !option.disabled && onChange(option.value)}
+                    >
+                        {iconSet ? <Icon iconSet={iconSet} value={option.value} /> : <span>{option.label}</span>}
+                    </button>
+                )
+            })}
         </div>
     )
 }

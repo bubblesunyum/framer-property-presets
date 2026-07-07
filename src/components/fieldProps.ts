@@ -1,6 +1,6 @@
 import {descriptorFor} from '../schema/propertySchema'
 import type {PresetProperties, PresetPropertyKey} from '../types/preset'
-import type {AlignmentValue} from './AlignmentGrid'
+import type {AlignmentChange, AlignmentValue} from './AlignmentGrid'
 import type {FieldProps} from './PropertyRow'
 
 /** Derives the Flow control's displayed value from the two underlying keys it
@@ -98,20 +98,27 @@ export function buildFieldProps(key: PresetPropertyKey, config: FieldPropsConfig
     }
   }
 
-  // Distribute + Align share one 3×3 grid, writing both stack keys at once.
+  // Distribute + Align share one 3×3 grid, writing both stack keys at once; Wrap's
+  // toggle button now lives directly under that same grid, so it's folded into this
+  // composite too rather than having its own row.
   if (key === 'stackAlignment') {
     const value: AlignmentValue = {
       direction: config.properties.stackDirection === 'horizontal' ? 'horizontal' : 'vertical',
       distribution: (config.properties.stackDistribution as string | null | undefined) ?? null,
       alignment: (config.properties.stackAlignment as string | null | undefined) ?? null,
+      wrapEnabled: Boolean(config.properties.stackWrapEnabled),
     }
     return {
       descriptor,
       value,
       included,
       onChange: (next) => {
-        const {distribution, alignment} = next as {distribution: string; alignment: string}
-        config.commit({stackDistribution: distribution, stackAlignment: alignment})
+        const change = next as AlignmentChange
+        if ('wrapEnabled' in change) {
+          config.commit({stackWrapEnabled: change.wrapEnabled})
+          return
+        }
+        config.commit({stackDistribution: change.distribution, stackAlignment: change.alignment})
       },
       onToggleIncluded,
     }

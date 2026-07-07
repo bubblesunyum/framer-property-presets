@@ -6,6 +6,7 @@ import {isExplicitValue} from '../schema/propertySchema'
 import {createPreset, updatePreset} from '../storage/presetRepository'
 import {
   finalizePreset,
+  DEFAULT_PRESET_APPEARANCE,
   type DraftPreset,
   type Preset,
   type PresetProperties,
@@ -13,6 +14,7 @@ import {
 } from '../types/preset'
 import {buildFieldProps, withDefaults} from './fieldProps'
 import './PresetEditor.css'
+import {PresetIconPicker} from './PresetIconPicker'
 import {PropertySections} from './PropertySections'
 
 export type PresetEditorProps =
@@ -87,8 +89,13 @@ export function PresetEditor(props: PresetEditorProps) {
             opacity: null,
             visible: null,
             zIndex: null,
+            squircle: 100,
+            pointerEvents: null,
           }),
         },
+  )
+  const [appearance, setAppearance] = useState(() =>
+    props.mode === 'edit' ? {icon: props.preset.icon, color: props.preset.color} : DEFAULT_PRESET_APPEARANCE,
   )
   const [computedSize, setComputedSize] = useState<{width: number | null; height: number | null}>({
     width: null,
@@ -138,9 +145,11 @@ export function PresetEditor(props: PresetEditorProps) {
   const toggleIncluded = (key: PresetPropertyKey) => {
     setRemovedKeys((prev) => {
       const next = new Set(prev)
-      // The alignment grid stands in for both stack keys, so its label toggles the two
-      // in lockstep — stackDistribution has no separate row to toggle on its own.
-      const keys: PresetPropertyKey[] = key === 'stackAlignment' ? ['stackAlignment', 'stackDistribution'] : [key]
+      // The alignment grid stands in for the two distribute/align keys plus Wrap's
+      // toggle button, so its label toggles all three in lockstep — none of them has a
+      // separate row of its own to toggle individually.
+      const keys: PresetPropertyKey[] =
+        key === 'stackAlignment' ? ['stackAlignment', 'stackDistribution', 'stackWrapEnabled'] : [key]
       const willRemove = !next.has(key)
       for (const target of keys) {
         if (willRemove) next.add(target)
@@ -175,7 +184,7 @@ export function PresetEditor(props: PresetEditorProps) {
         const includedKeys = new Set(
           (Object.keys(draft.properties) as PresetPropertyKey[]).filter((key) => !removedKeys.has(key)),
         )
-        const result = await updatePreset(props.preset, name, finalizePreset(draft.properties, includedKeys))
+        const result = await updatePreset(props.preset, name, finalizePreset(draft.properties, includedKeys), appearance)
         if (!result.ok) {
           setSaveState({kind: 'error', message: result.message})
           return
@@ -185,7 +194,7 @@ export function PresetEditor(props: PresetEditorProps) {
       }
 
       const includedKeys = new Set([...initiallyIncluded, ...touchedKeys])
-      const result = await createPreset(name, finalizePreset(draft.properties, includedKeys))
+      const result = await createPreset(name, finalizePreset(draft.properties, includedKeys), appearance)
 
       if (!result.ok) {
         setSaveState({kind: 'error', message: result.message})
@@ -209,7 +218,10 @@ export function PresetEditor(props: PresetEditorProps) {
   return (
     <main className='preset-editor'>
       <div className='preset-editor-name-row'>
-        <PresetNameField value={draft.name} onChange={(name) => setDraft((prev) => ({...prev, name}))} />
+        <div className='preset-editor-name-line'>
+          <PresetIconPicker icon={appearance.icon} color={appearance.color} onChange={setAppearance} />
+          <PresetNameField value={draft.name} onChange={(name) => setDraft((prev) => ({...prev, name}))} />
+        </div>
         {props.mode === 'create' && props.selectionCount > 1 && (
           <p className='preset-editor-hint'>
             Captured from {nodeName}. {props.selectionCount - 1} other layer
