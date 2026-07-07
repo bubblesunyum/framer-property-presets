@@ -60,7 +60,7 @@
 .number-field-label {
   flex-shrink: 0;
   margin-right: 6px;
-  font-size: 10px;
+  font-size: 12px;
   color: var(--framer-color-text-tertiary);
   pointer-events: none;
 }

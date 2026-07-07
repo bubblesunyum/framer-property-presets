@@ -1,6 +1,6 @@
 {
-    "id": "8e4117",
-    "name": "Property Presets",
-    "modes": ["canvas"],
-    "icon": "/icon.svg"
+  "id": "8e4117",
+  "name": "SpeedStyle",
+  "modes": ["canvas"],
+  "icon": "/icon.svg"
 }

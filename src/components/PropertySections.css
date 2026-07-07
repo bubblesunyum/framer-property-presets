@@ -1,272 +1,272 @@
 /* Scroll container shared by the preset editor and the live Design panel — both wrap
    PropertySections in one of these. */
 .property-scroll {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    /* No top padding — the sticky preset row above already carries the (small) gap
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  /* No top padding — the sticky preset row above already carries the (small) gap
        down to the first section's divider. */
-    padding: 0 0 15px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+  padding: 0 0 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .property-section {
-    display: flex;
-    flex-direction: column;
-    /* 16px between each row of items in a section (position control, pin grid, dimensions,
+  display: flex;
+  flex-direction: column;
+  /* 16px between each row of items in a section (position control, pin grid, dimensions,
        flow, gap/padding, alignment+z-index). */
-    gap: 16px;
-    padding: 16px 0;
+  gap: 16px;
+  padding: 16px 0;
 }
 
 .property-section-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    padding: 0 15px;
-    margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 15px;
+  margin-bottom: 2px;
 }
 
 .property-section-heading {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--framer-color-text);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--framer-color-text);
 }
 
 .appearance-visibility-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    flex-shrink: 0;
-    /* framer.css's generic `button` rule forces 10px/side padding by default — without
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  /* framer.css's generic `button` rule forces 10px/side padding by default — without
        overriding it here, a small icon-only button like this one is squeezed down to a
        hairline sliver since the padding alone nearly consumes its whole width. */
-    padding: 0;
-    background: none;
-    color: var(--framer-color-text-secondary);
-    opacity: 0.6;
-    transition: opacity 0.15s;
+  padding: 0;
+  background: none;
+  color: var(--framer-color-text-secondary);
+  opacity: 0.6;
+  transition: opacity 0.15s;
 }
 
 .appearance-visibility-toggle.is-included {
-    opacity: 1;
+  opacity: 1;
 }
 
 .appearance-visibility-toggle:hover {
-    color: var(--framer-color-text);
+  color: var(--framer-color-text);
 }
 
 .property-section-empty {
-    color: var(--framer-color-text-tertiary);
-    font-size: 11px;
-    padding: 0 15px;
+  color: var(--framer-color-text-tertiary);
+  font-size: 11px;
+  padding: 0 15px;
 }
 
 /* Full-width control, no label column — either bare (Position) or with a small heading
    above it (Flow, Alignment — see .property-fullwidth-label), extending all the way to
    the section's left edge either way. */
 .property-fullwidth {
-    padding: 0 15px;
-    opacity: 0.5;
-    transition: opacity 0.15s;
+  padding: 0 15px;
+  opacity: 0.5;
+  transition: opacity 0.15s;
 }
 
 .property-fullwidth.is-included {
-    opacity: 1;
+  opacity: 1;
 }
 
 .property-fullwidth-label {
-    margin: 0 0 6px;
-    font-size: 12px;
-    font-weight: 400;
-    color: var(--framer-color-text-secondary);
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--framer-color-text-secondary);
 }
 
 /* Flow's segmented control (its own background, via .segmented-control) plus the Wrap
    toggle as a distinct small button right after it, 4px apart — not one of the
    segmented control's own options. */
 .flow-wrap-row {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
 }
 
 .flow-wrap-row-control {
-    flex: 1;
-    min-width: 0;
+  flex: 1;
+  min-width: 0;
 }
 
 .flow-wrap-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    flex-shrink: 0;
-    padding: 0;
-    background: none;
-    color: #ffffff;
-    border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  padding: 0;
+  background: none;
+  color: #ffffff;
+  border-radius: 6px;
 }
 
 .flow-wrap-toggle.is-active {
-    background: var(--control-selected-bg);
-    color: #000000;
+  background: var(--control-selected-bg);
+  color: #000000;
 }
 
 /* Gap keeps a fixed, compact width (see NumberField's maxWidthPx) while Padding takes
    whatever room is left — unlike every other paired row, these two don't split evenly. */
 .gap-padding-row {
-    display: flex;
-    gap: 8px;
-    padding: 0 15px;
-    min-height: 32px;
+  display: flex;
+  gap: 8px;
+  padding: 0 15px;
+  min-height: 32px;
 }
 
 .gap-padding-row-gap {
-    flex-shrink: 0;
+  flex-shrink: 0;
 }
 
 .gap-padding-row-padding {
-    flex: 1;
-    min-width: 0;
+  flex: 1;
+  min-width: 0;
 }
 
 /* Alignment grid and Z-Index share one row — the grid (with its label above) on the
    left, the vertical Z-Index stack (label above) on the right. `align-items: stretch`
    makes the Z-Index block match the alignment grid's height so their bottoms line up. */
 .alignment-zindex-row {
-    display: flex;
-    align-items: stretch;
-    gap: 14px;
-    padding: 0 15px;
+  display: flex;
+  align-items: stretch;
+  gap: 14px;
+  padding: 0 15px;
 }
 
 .alignment-block {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    transition: opacity 0.15s;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: opacity 0.15s;
 }
 
 .zindex-block {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    flex-shrink: 0;
-    width: 56px;
-    transition: opacity 0.15s;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+  width: 56px;
+  transition: opacity 0.15s;
 }
 
 .alignment-block:not(.is-included),
 .zindex-block:not(.is-included) {
-    opacity: 0.5;
+  opacity: 0.5;
 }
 
 /* Fills the height left below the label, so the six rectangles + field span the same
    height as the alignment grid beside them. */
 .zindex-block .zindex-field {
-    flex: 1;
-    min-height: 0;
+  flex: 1;
+  min-height: 0;
 }
 
 /* Pin widget on the left, a 2×2 grid of the four edge fields (Left/Top over
    Right/Bottom) filling the rest — matches the reference Position layout. */
 .position-pins {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 0 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 15px;
 }
 
 .position-pins .pin-widget {
-    flex-shrink: 0;
+  flex-shrink: 0;
 }
 
 .position-pins-grid {
-    flex: 1;
-    min-width: 0;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
 }
 
 .dimensions {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    padding: 0 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 15px;
 }
 
 /* Same "heading left, action right" shape as a section header, but scoped to this one
    sub-group rather than the whole Layout section. */
 .dimensions-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .dimensions-header-title {
-    margin: 0;
-    font-size: 12px;
-    font-weight: 400;
-    color: var(--framer-color-text-secondary);
+  margin: 0;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--framer-color-text-secondary);
 }
 
 .size-axes-lock {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 22px;
-    height: 22px;
-    flex-shrink: 0;
-    padding: 0;
-    background: none;
-    color: var(--framer-color-text-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  padding: 0;
+  background: none;
+  color: var(--framer-color-text-tertiary);
 }
 
 .size-axes-lock:hover {
-    color: var(--framer-color-text-secondary);
+  color: var(--framer-color-text-secondary);
 }
 
 .size-axes-lock.is-locked {
-    color: var(--control-selected-fg);
+  color: var(--control-selected-fg);
 }
 
 /* Width / Height side by side, each its own column with a Min/Max expander. */
 .size-axes {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    align-items: start;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  align-items: start;
 }
 
 .size-axis {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
 }
 
 .size-axis-field {
-    opacity: 0.5;
-    transition: opacity 0.15s;
+  opacity: 0.5;
+  transition: opacity 0.15s;
 }
 
 .size-axis-field.is-included {
-    opacity: 1;
+  opacity: 1;
 }
 
 /* Min/Max side by side (matches the reference layout), not stacked. */
 .size-axis-minmax {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
 }
