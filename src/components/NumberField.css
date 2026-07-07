@@ -78,7 +78,7 @@
 
 .number-field-unit {
     flex-shrink: 0;
-    margin-left: 2px;
+    margin-left: 0;
     font-size: 11px;
     /* A bit brighter than the field's other dim text so the unit stays legible next to
        the value instead of fading into the background. */

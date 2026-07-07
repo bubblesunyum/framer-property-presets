@@ -1,12 +1,13 @@
 .sticky-preset-row {
     flex-shrink: 0;
     display: flex;
-    gap: 10px;
+    gap: 8px;
     padding: 12px 15px;
     overflow-x: auto;
-    border-bottom: 1px solid var(--framer-color-divider);
+    /* No border-bottom of its own — the Layout section's own `.framer-divider` sits
+       directly below this and was doubling up into two visible lines back to back. */
 }
 
 .sticky-preset-row .preset-icon-button {
-    border-radius: 18px;
+    border-radius: 9px;
 }

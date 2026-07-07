@@ -28,8 +28,12 @@ interface BaseDescriptor {
    *  stack-only fields only when `layout === "stack"`. Checked in addition to `guard`. */
   visibleWhen?: (properties: PresetProperties) => boolean
   /** Render the control spanning the full row with no label column — for controls
-   *  whose meaning is self-evident from their icons (Flow, Position). */
+   *  whose meaning is self-evident from their icons (Flow, Position, Alignment). */
   fullWidth?: boolean
+  /** Only meaningful alongside `fullWidth` — shows a small heading above the control
+   *  instead of leaving it bare (Flow, Alignment). Position stays bare: `fullWidth`
+   *  without this, since its icons alone are self-evident. */
+  labelAbove?: boolean
   /** This field has no real backing attribute in the framer-plugin SDK (Squircle,
    *  Pointer Events — neither exists in the installed SDK version) — it's captured/
    *  edited/stored like any other property, but `applyPreset.ts`/`applyAttributesToSelection`
@@ -278,6 +282,7 @@ export const PROPERTY_SCHEMA: PropertyDescriptor[] = [
     control: 'segmented',
     iconSet: 'flow',
     fullWidth: true,
+    labelAbove: true,
     guard: supportsLayout,
     // The underlying `layout`/`stackDirection` mapping (row = stack+horizontal,
     // column = stack+vertical) is handled specially in PresetEditor's fieldProps —
@@ -347,6 +352,8 @@ export const PROPERTY_SCHEMA: PropertyDescriptor[] = [
     group: 'layout',
     label: 'Alignment',
     control: 'align-grid',
+    fullWidth: true,
+    labelAbove: true,
     guard: hasStackLayout,
     visibleWhen: isStack,
   },

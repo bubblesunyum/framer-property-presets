@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { DragCaret } from "./DragCaret"
+import { createDragValueTracker, DRAG_THRESHOLD_PX } from "../lib/dragValueTracker"
 import "./NumberField.css"
 
 interface NumberFieldProps {
@@ -14,22 +14,22 @@ interface NumberFieldProps {
     /** Small dim label pinned to the far left, ahead of the value (e.g. a padding side:
      *  T/R/B/L, V/H) — always separated from the value by at least 6px. */
     leftLabel?: string
-    /** Caps the field's width to ~6 characters + unit + padding so it doesn't stretch to
-     *  fill its row (Width/Height/Gap/Radius) — fields with a leftLabel (pins, padding
-     *  sides) intentionally don't use this, since those already size via their grid. */
+    /** Caps the field's width so it doesn't stretch to fill its row (Radius, Squircle,
+     *  Opacity) — fields with a leftLabel (pins, padding sides) intentionally don't use
+     *  this, since those already size via their grid. */
     compact?: boolean
+    /** Overrides the default compact cap (92px) — e.g. Gap gets a wider 108px cap so it
+     *  still reads comfortably next to Padding's own box. Ignored unless `compact`. */
+    maxWidthPx?: number
     /** Read-only: value is shown but not editable (e.g. Width/Height's computed size
      *  while their mode is "Fit", which has no real numeric value of its own). */
     disabled?: boolean
     /** Slightly dims the whole field — for a value that's currently unset (null) rather
      *  than disabled, e.g. an unpinned position edge or an unset min/max constraint. */
     dim?: boolean
-    /** Adds the small drag-to-adjust up/down caret pair, anchored right. Omit for
-     *  fields where a vertical drag gesture doesn't make sense. */
-    showCarets?: boolean
-    /** Step per caret click / arrow-key nudge. */
-    step?: number
-    /** Units moved per pixel while dragging the caret — higher reads as "faster". */
+    /** Units moved per pixel while dragging vertically anywhere on the field — higher
+     *  reads as "faster" (e.g. Opacity drags faster than Radius). Set to 0 to disable
+     *  drag-to-adjust entirely (rare — only where a vertical drag wouldn't make sense). */
     dragSensitivity?: number
 }
 
@@ -37,17 +37,16 @@ function clamp(value: number, min: number, max: number) {
     return Math.min(Math.max(value, min), max)
 }
 
-/** Plain numeric field — no native increment/decrement UI, matching Framer's own
- *  fields but with an optional drag-caret (see `showCarets`). Keeps a local text buffer
- *  that only commits (and clamps) on blur/Enter — except an arrow-key nudge, which
- *  commits immediately so the canvas updates in real time as you nudge, the same way a
- *  direct edit or drag does.
+/** Plain numeric field — no separate drag handle; grabbing anywhere on the field and
+ *  dragging vertically adjusts the value directly (up increases), while a plain click
+ *  (no significant vertical movement before release) focuses and selects the text for
+ *  overtyping. Keeps a local text buffer that only commits (and clamps) on blur/Enter —
+ *  except an arrow-key nudge, which commits immediately so the canvas updates in real
+ *  time as you nudge, the same way a direct edit or drag does.
  *
  *  Renders its own pill (background/radius) rather than relying on framer.css's native
  *  input chrome, so the left label, value, and unit can share one visually connected
- *  box with the value+unit reading naturally together, left-aligned. Clicking anywhere
- *  in the box (including over the pointer-events:none label/unit) focuses and selects
- *  the input's text. */
+ *  box with the value+unit reading naturally together, left-aligned. */
 export function NumberField({
     value,
     onChange,
@@ -56,15 +55,17 @@ export function NumberField({
     unit,
     leftLabel,
     compact,
+    maxWidthPx,
     disabled,
     dim,
-    showCarets,
-    step = 1,
     dragSensitivity = 1,
 }: NumberFieldProps) {
     const [inputValue, setInputValue] = useState(value === null ? "" : String(value))
     const inputRef = useRef<HTMLInputElement>(null)
     const isFocusedRef = useRef(false)
+    const tracker = useRef(createDragValueTracker(value ?? 0)).current
+    const wasDraggedRef = useRef(false)
+
     // Resync the local buffer whenever the value coming from outside changes — e.g. a
     // linked Width/Height edit (see PropertySections' aspect-ratio lock) or a
     // background poll picking up an edit made in Framer's own panel (see DesignPanel) —
@@ -75,9 +76,11 @@ export function NumberField({
     // throwaway first pass, so the real pass never sees a change to react to, and the
     // display silently stops tracking the real value).
     useEffect(() => {
+        tracker.sync(value ?? 0)
         if (isFocusedRef.current) return
         setInputValue(value === null ? "" : String(value))
-    }, [value])
+    }, [value, tracker])
+
     const isNudgingRef = useRef(false)
 
     const commitRaw = (raw: string) => {
@@ -96,11 +99,45 @@ export function NumberField({
         onChange(clamped)
     }
 
-    const activate = () => {
-        if (disabled) return
-        inputRef.current?.focus()
-        inputRef.current?.select()
+    const pointerDownYRef = useRef(0)
+
+    const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+        if (disabled || dragSensitivity === 0) return
+        // Block the native focus-on-mousedown so a drag doesn't also drop a text cursor
+        // into the field — the plain-click case focuses it manually on pointerup below.
+        event.preventDefault()
+        wasDraggedRef.current = false
+        pointerDownYRef.current = event.clientY
+        tracker.start(event.clientY)
+        ;(event.currentTarget as Element).setPointerCapture?.(event.pointerId)
     }
+
+    useEffect(() => {
+        if (disabled || dragSensitivity === 0) return
+        const handleMove = (event: PointerEvent) => {
+            if (!tracker.isDragging) return
+            // Only counts as a drag once the pointer has actually moved past a small
+            // threshold — otherwise a click that jitters by a pixel would wrongly skip
+            // the focus-and-select-text behavior below.
+            if (Math.abs(event.clientY - pointerDownYRef.current) < DRAG_THRESHOLD_PX) return
+            wasDraggedRef.current = true
+            onChange(tracker.move(event.clientY, dragSensitivity, min, max))
+        }
+        const handleUp = () => {
+            if (!tracker.isDragging) return
+            tracker.end()
+            if (!wasDraggedRef.current) {
+                inputRef.current?.focus()
+                inputRef.current?.select()
+            }
+        }
+        window.addEventListener("pointermove", handleMove)
+        window.addEventListener("pointerup", handleUp)
+        return () => {
+            window.removeEventListener("pointermove", handleMove)
+            window.removeEventListener("pointerup", handleUp)
+        }
+    }, [tracker, dragSensitivity, min, max, onChange, disabled])
 
     const classes = ["number-field"]
     if (compact) classes.push("is-compact")
@@ -108,7 +145,11 @@ export function NumberField({
     if (dim) classes.push("is-dim")
 
     return (
-        <div className={classes.join(" ")} onClick={activate}>
+        <div
+            className={classes.join(" ")}
+            style={compact && maxWidthPx ? { maxWidth: maxWidthPx } : undefined}
+            onPointerDown={handlePointerDown}
+        >
             {leftLabel && <span className="number-field-label">{leftLabel}</span>}
             <input
                 ref={inputRef}
@@ -143,9 +184,6 @@ export function NumberField({
                 placeholder="–"
             />
             {unit && !disabled && <span className="number-field-unit">{unit}</span>}
-            {showCarets && !disabled && (
-                <DragCaret value={value ?? 0} onChange={onChange} step={step} dragSensitivity={dragSensitivity} min={min} max={max} />
-            )}
         </div>
     )
 }

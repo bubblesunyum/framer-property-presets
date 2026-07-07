@@ -62,12 +62,14 @@ export function renderControl(
                     value={parseNumeric(value)}
                     unit={descriptor.unit}
                     leftLabel={descriptor.displaySuffix}
-                    // A plain dimension (no side label — gap, radius) is capped narrow so
-                    // it doesn't stretch to fill its row; side-labelled ones (pins) size
-                    // via their own cross/pair layout instead.
-                    compact={!descriptor.displaySuffix}
+                    // Radius is a solo full-width row, capped narrow rather than
+                    // stretching all the way across. Gap sits beside Padding in the
+                    // dedicated GapPaddingRow layout (see PropertySections.tsx) — it gets
+                    // a wider compact cap there so Padding's own box still gets most of
+                    // the row's width.
+                    compact={descriptor.key === "radius" || descriptor.key === "gap"}
+                    maxWidthPx={descriptor.key === "gap" ? 108 : undefined}
                     dim={value == null}
-                    showCarets
                     dragSensitivity={descriptor.key === "radius" ? 0.4 : 1}
                     onChange={(next) => onChange(`${next}${descriptor.unit}`)}
                 />
@@ -76,6 +78,7 @@ export function renderControl(
             return (
                 <LengthField
                     value={typeof value === "string" ? value : null}
+                    axis={descriptor.key.toLowerCase().includes("height") ? "height" : "width"}
                     constrained={descriptor.constrained}
                     computedPx={computedPx}
                     onChange={onChange}
@@ -87,7 +90,6 @@ export function renderControl(
                     value={typeof value === "number" ? value : null}
                     min={descriptor.min}
                     dim={value == null}
-                    showCarets
                     onChange={onChange}
                 />
             )
@@ -126,7 +128,6 @@ export function renderControl(
                     max={100}
                     compact
                     dim={value == null}
-                    showCarets
                     dragSensitivity={1.5}
                     onChange={(next) => onChange(next / 100)}
                 />
@@ -140,7 +141,6 @@ export function renderControl(
                     min={0}
                     max={100}
                     compact
-                    showCarets
                     onChange={onChange}
                 />
             )
@@ -185,12 +185,13 @@ export function renderControl(
  *  don't naturally pair with a neighbor. Dims when not (yet) included, rather than
  *  showing a separate include/exclude checkbox. */
 export function PropertyRow({ descriptor, value, included, onChange, onToggleIncluded, computedPx }: FieldProps) {
-    // Padding/Alignment can grow taller as they expand — top-align the row so the label
-    // and the control's own top-row chrome (expand button, settings icon) don't drift
-    // down as they open/grow.
+    // Padding can grow taller as it expands to 4 sides — top-align the row so the label
+    // and the control's own expand button don't drift down as it grows. (Alignment used
+    // to need this too, but it's now rendered full-width with its own label above it,
+    // not through this labeled-row path at all.)
     const classes = ["row", "property-row"]
     if (included) classes.push("is-included")
-    if (descriptor.control === "padding" || descriptor.control === "align-grid") classes.push("is-top")
+    if (descriptor.control === "padding") classes.push("is-top")
     return (
         <div className={classes.join(" ")}>
             <label

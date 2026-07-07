@@ -90,7 +90,7 @@ export function PresetEditor(props: PresetEditorProps) {
             visible: null,
             zIndex: null,
             squircle: 100,
-            pointerEvents: null,
+            pointerEvents: 'auto',
           }),
         },
   )

@@ -1,4 +1,4 @@
-import type { CanvasNode } from "framer-plugin"
+import { framer, type CanvasNode } from "framer-plugin"
 import { descriptorFor } from "../schema/propertySchema"
 import type { Preset, PresetPropertyKey } from "../types/preset"
 
@@ -17,6 +17,17 @@ export interface ApplyOutcome {
  *  `setAttributes` call per node so a single click is a single native-undo step. */
 export async function applyPresetToSelection(preset: Preset, selection: CanvasNode[]): Promise<ApplyOutcome> {
     const outcome: ApplyOutcome = { appliedCount: 0, skippedCount: 0, failedNodes: [] }
+
+    // `setAttributes` is a protected method — calling it without checking first is what
+    // produces the host's "tried to call setAttributes before asking for permission"
+    // warning, and (unlike a normal rejected promise) that warning doesn't run through
+    // this function's own try/catch, so it needs to be avoided up front instead of
+    // handled after the fact. Same pattern as syncedStore.ts's `isAllowedTo("setPluginData")`
+    // pre-check.
+    if (!framer.isAllowedTo("setAttributes")) {
+        outcome.skippedCount = selection.length
+        return outcome
+    }
 
     await Promise.all(
         selection.map(async (node) => {
@@ -59,6 +70,8 @@ export async function applyAttributesToSelection(
     changes: Record<string, unknown>,
     selection: CanvasNode[]
 ): Promise<void> {
+    if (!framer.isAllowedTo("setAttributes")) return
+
     await Promise.all(
         selection.map(async (node) => {
             const payload: Record<string, unknown> = {}

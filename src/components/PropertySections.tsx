@@ -1,12 +1,14 @@
 import {useState, type ReactNode} from 'react'
 import {EDITOR_ROWS, type EditorRow} from '../schema/editorLayout'
 import type {PresetPropertyKey} from '../types/preset'
+import {LengthField} from './LengthField'
 import {PinWidget} from './PinWidget'
 import './PropertySections.css'
 import {
   PropertyColumnPair,
   PropertyControlOnly,
   PropertyFieldPair,
+  PropertyMiniField,
   PropertyRow,
   renderControl,
   type FieldProps,
@@ -14,15 +16,14 @@ import {
 
 type FieldPropsFor = (key: PresetPropertyKey) => FieldProps | null
 
-/** Renders the full property form for a single node's draft — one combined Position &
- *  Size section (position control + conditional pin cross + Width/Height axes), the
- *  Layout section, an Appearance section, and an Interaction section. Shared verbatim
- *  between the preset editor and the live Design panel; the only difference is the
- *  `fieldProps` builder each hands in. */
+/** Renders the full property form for a single node's draft — one Layout section
+ *  (position control, conditional pin cross, and Width/Height axes at the top, followed
+ *  by Flow/Gap/Padding/Alignment/Z-Index/grid fields), an Appearance section, and an
+ *  Interaction section. Shared verbatim between the preset editor and the live Design
+ *  panel; the only difference is the `fieldProps` builder each hands in. */
 export function PropertySections({fieldProps}: {fieldProps: FieldPropsFor}) {
   return (
     <>
-      <PositionSizeSection fieldProps={fieldProps} />
       <LayoutSection fieldProps={fieldProps} />
       <AppearanceSection fieldProps={fieldProps} />
       <InteractionSection fieldProps={fieldProps} />
@@ -57,7 +58,9 @@ function Section({
   )
 }
 
-function PositionSizeSection({fieldProps}: {fieldProps: FieldPropsFor}) {
+/** Position control + conditional pin cross + Width/Height axes — sits at the top of
+ *  the Layout section (there's no separate "Position & Size" section anymore). */
+function PositionAndSize({fieldProps}: {fieldProps: FieldPropsFor}) {
   const position = fieldProps('position')
   // The pin cross only applies once a layer is out of normal flow (any position mode
   // other than "relative"). The pin keys are always captured, so switching modes here
@@ -75,9 +78,11 @@ function PositionSizeSection({fieldProps}: {fieldProps: FieldPropsFor}) {
   const height = fieldProps('height')
   const hasSize = Boolean(width || height)
 
+  if (!position && !hasPins && !hasSize) return null
+
   return (
-    <Section title='Position & Size' isEmpty={!position && !hasPins && !hasSize}>
-      {position && <FullWidthControl field={position} extraClass='property-fullwidth-flow' />}
+    <>
+      {position && <FullWidthControl field={position} />}
       {hasPins && (
         <div className='position-cross'>
           {pins.top && (
@@ -103,13 +108,13 @@ function PositionSizeSection({fieldProps}: {fieldProps: FieldPropsFor}) {
         </div>
       )}
       {hasSize && <SizeAxes width={width} height={height} fieldProps={fieldProps} />}
-    </Section>
+    </>
   )
 }
 
-/** Width and Height side by side, with a lock toggle centered in the gap between them —
- *  when locked, editing one proportionally scales the other to hold the ratio captured
- *  at the moment it was locked. */
+/** "Dimensions" heading (with the aspect-ratio lock toggle at its far right) above
+ *  Width and Height side by side — when locked, editing one proportionally scales the
+ *  other to hold the ratio captured at the moment it was locked. */
 function SizeAxes({width, height, fieldProps}: {width: FieldProps | null; height: FieldProps | null; fieldProps: FieldPropsFor}) {
   const [locked, setLocked] = useState(false)
   const [lockedRatio, setLockedRatio] = useState<number | null>(null)
@@ -155,19 +160,59 @@ function SizeAxes({width, height, fieldProps}: {width: FieldProps | null; height
     },
   }
 
+  const [openAxis, setOpenAxis] = useState<'width' | 'height' | null>(null)
+  const minWidth = fieldProps('minWidth')
+  const maxWidth = fieldProps('maxWidth')
+  const minHeight = fieldProps('minHeight')
+  const maxHeight = fieldProps('maxHeight')
+
   return (
-    <div className='size-axes'>
-      <SizeAxis main={linkedWidth} min={fieldProps('minWidth')} max={fieldProps('maxWidth')} />
-      <button
-        type='button'
-        className={locked ? 'size-axes-lock is-locked' : 'size-axes-lock'}
-        onClick={toggleLock}
-        title={locked ? 'Unlink width and height' : 'Lock aspect ratio'}
-        aria-label={locked ? 'Unlink width and height' : 'Lock aspect ratio'}
-      >
-        <LinkIcon locked={locked} />
-      </button>
-      <SizeAxis main={linkedHeight} min={fieldProps('minHeight')} max={fieldProps('maxHeight')} />
+    <div className='dimensions'>
+      <div className='dimensions-header'>
+        <h4 className='dimensions-header-title'>Dimensions</h4>
+        <button
+          type='button'
+          className={locked ? 'size-axes-lock is-locked' : 'size-axes-lock'}
+          onClick={toggleLock}
+          title={locked ? 'Unlink width and height' : 'Lock aspect ratio'}
+          aria-label={locked ? 'Unlink width and height' : 'Lock aspect ratio'}
+        >
+          <LinkIcon locked={locked} />
+        </button>
+      </div>
+      <div className='size-axes'>
+        <SizeAxis
+          axis='width'
+          leftLabel='W'
+          main={linkedWidth}
+          hasMinMax={Boolean(minWidth || maxWidth)}
+          open={openAxis === 'width'}
+          onToggleOpen={() => setOpenAxis((prev) => (prev === 'width' ? null : 'width'))}
+        />
+        <SizeAxis
+          axis='height'
+          leftLabel='H'
+          main={linkedHeight}
+          hasMinMax={Boolean(minHeight || maxHeight)}
+          open={openAxis === 'height'}
+          onToggleOpen={() => setOpenAxis((prev) => (prev === 'height' ? null : 'height'))}
+        />
+      </div>
+      {/* Spans the full row width (not confined to just one axis's own half-column) —
+          there's plenty of room for two comfortably-sized boxes here, unlike squeezing
+          them into half of an already-narrow column. */}
+      {openAxis === 'width' && (minWidth || maxWidth) && (
+        <div className='size-axis-minmax'>
+          {minWidth && <MinMaxField label='Min' field={minWidth} axis='width' />}
+          {maxWidth && <MinMaxField label='Max' field={maxWidth} axis='width' />}
+        </div>
+      )}
+      {openAxis === 'height' && (minHeight || maxHeight) && (
+        <div className='size-axis-minmax'>
+          {minHeight && <MinMaxField label='Min' field={minHeight} axis='height' />}
+          {maxHeight && <MinMaxField label='Max' field={maxHeight} axis='height' />}
+        </div>
+      )}
     </div>
   )
 }
@@ -198,67 +243,66 @@ function LinkIcon({locked}: {locked: boolean}) {
   )
 }
 
-/** One dimension column: the Width/Height field, with its own Min/Max fields tucked
- *  behind a small expander directly underneath. The expander itself never auto-opens —
- *  its own summary text ("min: 100px, max: –") already conveys whether constraints are
- *  set without needing to expand, and its caret's left edge lines up with the
- *  Width/Height label above it. */
-function SizeAxis({main, min, max}: {main: FieldProps | null; min: FieldProps | null; max: FieldProps | null}) {
-  const [open, setOpen] = useState(false)
+/** One dimension column: just the Width/Height field itself (with its own unit button
+ *  and, when Min/Max apply, an expand caret built into the field — see LengthField).
+ *  The Min/Max fields it reveals live outside this column entirely (see SizeAxes) —
+ *  spanning the full row rather than being squeezed into this one narrow half. */
+function SizeAxis({
+  axis,
+  leftLabel,
+  main,
+  hasMinMax,
+  open,
+  onToggleOpen,
+}: {
+  axis: 'width' | 'height'
+  leftLabel: string
+  main: FieldProps | null
+  hasMinMax: boolean
+  open: boolean
+  onToggleOpen: () => void
+}) {
   if (!main) return null
-  const hasMinMax = Boolean(min || max)
-
-  const summary = hasMinMax
-    ? `min: ${min && min.value != null ? min.value : '–'}, max: ${max && max.value != null ? max.value : '–'}`
-    : null
 
   return (
     <div className='size-axis'>
-      <label
-        className={main.onToggleIncluded ? 'mini-field-label is-toggleable' : 'mini-field-label'}
-        onClick={main.onToggleIncluded}
-      >
-        {main.descriptor.label}
-      </label>
       <div className={main.included ? 'size-axis-field is-included' : 'size-axis-field'}>
-        {renderControl(main.descriptor, main.value, main.onChange, main.computedPx)}
+        <LengthField
+          value={typeof main.value === 'string' ? main.value : null}
+          axis={axis}
+          leftLabel={leftLabel}
+          computedPx={main.computedPx}
+          expandable={hasMinMax}
+          expanded={open}
+          onToggleExpanded={onToggleOpen}
+          onChange={main.onChange}
+        />
       </div>
-      {hasMinMax && (
-        <>
-          <button
-            type='button'
-            className='size-constraints-toggle'
-            aria-expanded={open}
-            onClick={() => setOpen((prev) => !prev)}
-          >
-            <ChevronIcon />
-            {!open && <span className='size-constraints-summary'>{summary}</span>}
-          </button>
-          {open && (
-            <div className='size-axis-minmax'>
-              {min && <MinMaxField label='Min' field={min} />}
-              {max && <MinMaxField label='Max' field={max} />}
-            </div>
-          )}
-        </>
-      )}
     </div>
   )
 }
 
-function MinMaxField({label, field}: {label: string; field: FieldProps}) {
+function MinMaxField({label, field, axis}: {label: string; field: FieldProps; axis: 'width' | 'height'}) {
   return (
     <div className={field.included ? 'mini-field is-included' : 'mini-field'}>
       <label className='mini-field-label'>{label}</label>
-      {renderControl(field.descriptor, field.value, field.onChange)}
+      <LengthField
+        value={typeof field.value === 'string' ? field.value : null}
+        axis={axis}
+        constrained
+        onChange={field.onChange}
+      />
     </div>
   )
 }
 
 function LayoutSection({fieldProps}: {fieldProps: FieldPropsFor}) {
+  const positionAndSize = <PositionAndSize fieldProps={fieldProps} />
   const rows = renderRows(EDITOR_ROWS.layout, fieldProps)
+  const hasPositionAndSize = fieldProps('position') || fieldProps('width') || fieldProps('height')
   return (
-    <Section title='Layout' isEmpty={rows.length === 0}>
+    <Section title='Layout' isEmpty={!hasPositionAndSize && rows.length === 0}>
+      {positionAndSize}
       {rows}
     </Section>
   )
@@ -334,20 +378,38 @@ function EyeOffIcon() {
   )
 }
 
-/** A control that spans the whole row with no label column (Flow, Position) — its icons
- *  carry the meaning. Dims when excluded, same as a labelled row. */
-function FullWidthControl({field, extraClass}: {field: FieldProps; extraClass?: string}) {
-  const classes = ['property-fullwidth']
-  if (field.included) classes.push('is-included')
-  if (extraClass) classes.push(extraClass)
-  return <div className={classes.join(' ')}>{renderControl(field.descriptor, field.value, field.onChange)}</div>
+/** A control that spans the whole row with no label column — either bare (Position,
+ *  self-evident from its icons) or with a small heading above it (Flow, Alignment — see
+ *  each descriptor's `labelAbove`), rather than a label to its left, so the control
+ *  itself can extend all the way to the section's left edge. Dims when excluded, same
+ *  as a labelled row. */
+function FullWidthControl({field}: {field: FieldProps}) {
+  const showLabel = 'labelAbove' in field.descriptor && field.descriptor.labelAbove
+  return (
+    <div className={field.included ? 'property-fullwidth is-included' : 'property-fullwidth'}>
+      {showLabel && <h4 className='property-fullwidth-label'>{field.descriptor.label}</h4>}
+      {renderControl(field.descriptor, field.value, field.onChange)}
+    </div>
+  )
 }
 
-function ChevronIcon() {
+/** Gap (fixed max-width) beside Padding (fills whatever's left) — see the comment where
+ *  this is chosen over the generic equal-halves `PropertyFieldPair`. */
+function GapPaddingRow({gap, padding}: {gap: FieldProps | null; padding: FieldProps | null}) {
+  if (!gap && !padding) return null
   return (
-    <svg width='7' height='7' viewBox='0 0 7 7' fill='none' className='size-constraints-chevron'>
-      <path d='M1.5.5l3 3-3 3' stroke='currentColor' strokeWidth='1.3' strokeLinecap='round' strokeLinejoin='round' />
-    </svg>
+    <div className="gap-padding-row">
+      {gap && (
+        <div className="gap-padding-row-gap">
+          <PropertyMiniField {...gap} />
+        </div>
+      )}
+      {padding && (
+        <div className="gap-padding-row-padding">
+          <PropertyMiniField {...padding} />
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -383,7 +445,15 @@ function renderRows(rows: readonly EditorRow[], fieldProps: FieldPropsFor): Reac
           <PropertyRow key={index} {...row.solo} />
         )
       }
-      if ('pair' in row) return <PropertyFieldPair key={index} left={row.pair[0]} right={row.pair[1]} />
+      if ('pair' in row) {
+        // Gap gets a fixed max-width (108px) and Padding fills whatever's left, rather
+        // than splitting the row into two equal halves like every other paired row —
+        // Padding's own box (2-4 side fields) needs the room, Gap's compact one doesn't.
+        if (row.pair[0]?.descriptor.key === 'gap' && row.pair[1]?.descriptor.key === 'padding') {
+          return <GapPaddingRow key={index} gap={row.pair[0]} padding={row.pair[1]} />
+        }
+        return <PropertyFieldPair key={index} left={row.pair[0]} right={row.pair[1]} />
+      }
       return <PropertyColumnPair key={index} left={row.columns[0]} right={row.columns[1]} />
     })
 }

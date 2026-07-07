@@ -23,7 +23,7 @@ export function StickyPresetRow({presets, selection}: StickyPresetRowProps) {
           key={preset.id}
           icon={preset.icon}
           color={preset.color}
-          size={69}
+          size={35}
           title={`Apply "${preset.name}"`}
           onClick={() => {
             if (selection.length === 0) return

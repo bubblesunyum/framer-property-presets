@@ -8,9 +8,9 @@ interface ZIndexFieldProps {
 
 const SNAP_MAX = 5
 
-/** Z-Index gets two ways to nudge it: the field itself (with its own drag/click carets,
- *  anchored right — see NumberField's `showCarets`), and a 6-snap-point slider below it
- *  for quickly jumping between the first few stacking positions (0–5), the common case.
+/** Z-Index gets two ways to nudge it, side by side: the field itself (drag anywhere on
+ *  it to adjust, like any other NumberField), and a 6-snap-point slider beside it for
+ *  quickly jumping between the first few stacking positions (0–5), the common case.
  *  Values above 5 are still fully valid — the slider just pins to its top end for those,
  *  it doesn't clamp the real value. */
 export function ZIndexField({ value, onChange }: ZIndexFieldProps) {
@@ -18,7 +18,7 @@ export function ZIndexField({ value, onChange }: ZIndexFieldProps) {
 
     return (
         <div className="zindex-field">
-            <NumberField value={value} onChange={onChange} showCarets dim={value == null} />
+            <NumberField value={value} onChange={onChange} dim={value == null} />
             <div className="zindex-slider">
                 <input
                     type="range"

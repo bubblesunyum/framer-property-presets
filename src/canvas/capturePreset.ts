@@ -14,10 +14,14 @@ export function captureFromNode(node: CanvasNode): DraftPreset {
         if (descriptor.visibleWhen && !descriptor.visibleWhen(properties)) continue
 
         // Synthetic fields (Squircle, Pointer Events) have no real node attribute to
-        // read at all — Squircle defaults to 100% for every element; Pointer Events has
-        // no sensible default guess, so it stays unset until the user picks one.
+        // read at all — Squircle defaults to 100% for every element, Pointer Events
+        // defaults to "auto" (CSS's own default, and the common case).
         if (descriptor.key === "squircle") {
             properties[descriptor.key] = 100
+            continue
+        }
+        if (descriptor.key === "pointerEvents") {
+            properties[descriptor.key] = "auto"
             continue
         }
         if (descriptor.synthetic) {

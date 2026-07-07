@@ -1,6 +1,9 @@
 .alignment-grid-row {
     display: flex;
-    align-items: flex-start;
+    /* Stretch (not flex-start) so .alignment-side-buttons' height actually matches the
+       slider's — the row's own height is set by the slider (the tallest child), and the
+       side buttons need to grow to match it, not just start-align against its top. */
+    align-items: stretch;
     gap: 6px;
     width: 100%;
 }
@@ -9,7 +12,7 @@
     position: relative;
     flex: 1;
     min-width: 0;
-    height: 62px;
+    height: 84px;
     overflow: hidden;
     border-radius: 8px;
 }
@@ -44,8 +47,8 @@
     height: 100%;
     background: var(--framer-color-bg-tertiary);
     border-radius: 8px;
-    padding: 4px;
-    gap: 2px;
+    padding: 6px;
+    gap: 4px;
 }
 
 .alignment-grid {
@@ -119,38 +122,19 @@
 }
 
 .alignment-alt-bars {
-    position: relative;
-    width: 26px;
-    height: 26px;
+    display: block;
 }
 
-.alignment-alt-bar {
-    position: absolute;
-    background: currentColor;
-    border-radius: 1px;
-}
-
-.alignment-alt-bar.is-horizontal {
-    top: 9px;
-    width: 2px;
-    height: 8px;
-    transform: translateX(-50%);
-}
-
-.alignment-alt-bar.is-vertical {
-    left: 50%;
-    width: 8px;
-    height: 2px;
-    transform: translate(-50%, -50%);
-}
-
-/* Caret (top) + Wrap toggle (underneath) stacked beside the slider, both top-aligned
-   with it. */
+/* Caret (top) + Wrap toggle (underneath), stacked beside the slider. Each is `flex: 1`
+   rather than a fixed height, so the two together always add up to exactly the
+   slider's own height (whatever that is) instead of two independently-sized buttons
+   that happen to approximate it. */
 .alignment-side-buttons {
     display: flex;
     flex-direction: column;
     gap: 6px;
     flex-shrink: 0;
+    align-self: stretch;
 }
 
 .alignment-caret,
@@ -158,13 +142,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    flex: 1;
     width: 30px;
-    height: 30px;
     padding: 0;
     background: var(--framer-color-bg-tertiary);
     color: var(--framer-color-text-tertiary);
     border-radius: 6px;
-    flex-shrink: 0;
 }
 
 .alignment-caret:hover,

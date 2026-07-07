@@ -7,7 +7,8 @@
         "dev": "vite",
         "build": "tsc -b && vite build",
         "check-typescript": "tsc -b --noEmit",
-        "preview": "vite preview"
+        "preview": "vite preview",
+        "test": "vitest run"
     },
     "dependencies": {
         "framer-plugin": "3.10.3",
@@ -22,6 +23,7 @@
         "typescript": "^5.6.2",
         "vite": "^6.0.3",
         "vite-plugin-framer": "^1.1.1",
-        "vite-plugin-mkcert": "^1.17.6"
+        "vite-plugin-mkcert": "^1.17.6",
+        "vitest": "^4.1.10"
     }
 }

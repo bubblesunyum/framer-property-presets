@@ -63,7 +63,9 @@
     padding: 0 15px;
 }
 
-/* Full-width, label-less control (Position, Flow). */
+/* Full-width control, no label column — either bare (Position) or with a small heading
+   above it (Flow, Alignment — see .property-fullwidth-label), extending all the way to
+   the section's left edge either way. */
 .property-fullwidth {
     padding: 0 15px;
     opacity: 0.5;
@@ -74,9 +76,29 @@
     opacity: 1;
 }
 
-/* 1.5x the section's normal 8px row gap below Flow specifically. */
-.property-fullwidth-flow {
-    margin-bottom: 4px;
+.property-fullwidth-label {
+    margin: 0 0 6px;
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--framer-color-text-secondary);
+}
+
+/* Gap keeps a fixed, compact width (see NumberField's maxWidthPx) while Padding takes
+   whatever room is left — unlike every other paired row, these two don't split evenly. */
+.gap-padding-row {
+    display: flex;
+    gap: 8px;
+    padding: 0 15px;
+    min-height: 30px;
+}
+
+.gap-padding-row-gap {
+    flex-shrink: 0;
+}
+
+.gap-padding-row-padding {
+    flex: 1;
+    min-width: 0;
 }
 
 .position-cross {
@@ -104,35 +126,39 @@
     min-width: 0;
 }
 
-/* Width / Height side by side, each its own column with a Min/Max expander. Relative
-   positioning lets the lock toggle sit centered in the gap, half-overlapping both
-   columns, rather than claiming a gutter column of its own. */
-.size-axes {
-    position: relative;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
+.dimensions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
     padding: 0 15px;
-    align-items: start;
+}
+
+/* Same "heading left, action right" shape as a section header, but scoped to this one
+   sub-group rather than the whole Layout section. */
+.dimensions-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.dimensions-header-title {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--framer-color-text-secondary);
 }
 
 .size-axes-lock {
-    position: absolute;
-    left: 50%;
-    /* Vertically centered on the value box's row (below the Width/Height label). */
-    top: 33px;
-    transform: translate(-50%, -50%);
-    width: 20px;
-    height: 20px;
-    padding: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--framer-color-bg-tertiary);
-    border: 1px solid var(--framer-color-bg);
-    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    padding: 0;
+    background: none;
     color: var(--framer-color-text-tertiary);
-    z-index: 1;
 }
 
 .size-axes-lock:hover {
@@ -141,7 +167,14 @@
 
 .size-axes-lock.is-locked {
     color: var(--control-selected-fg);
-    background: var(--control-selected-bg);
+}
+
+/* Width / Height side by side, each its own column with a Min/Max expander. */
+.size-axes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    align-items: start;
 }
 
 .size-axis {
@@ -165,45 +198,4 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 6px;
-}
-
-.size-constraints-toggle {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    align-self: flex-start;
-    height: auto;
-    min-height: 0;
-    margin: 0;
-    /* No left padding — the chevron's own left edge lines up with the Width/Height
-       label above it (the icon's path also starts flush at x=1.5, not further inset). */
-    padding: 2px 0;
-    background: none;
-    border: none;
-    color: var(--framer-color-text-tertiary);
-    font-size: 11px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: color 0.15s;
-    max-width: 100%;
-}
-
-.size-constraints-toggle:hover {
-    color: var(--framer-color-text-secondary);
-}
-
-.size-constraints-chevron {
-    flex-shrink: 0;
-    transition: transform 0.15s;
-}
-
-/* Points right when collapsed, up when expanded (not down). */
-.size-constraints-toggle[aria-expanded='true'] .size-constraints-chevron {
-    transform: rotate(-90deg);
-}
-
-.size-constraints-summary {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }

@@ -133,29 +133,58 @@ function Bars({direction}: {direction: 'horizontal' | 'vertical'}) {
   )
 }
 
-/** Approximate main-axis position (percent) of each of 3 items under a space-*
- *  distribution — not pixel-exact CSS math, just enough to visually distinguish the
- *  three patterns (space-between pins the outer two to the edges, space-around gives
- *  the edges half a gap, space-evenly gives every gap, including the edges, the same
- *  size). */
+/** Approximate main-axis position (percent, in a 0–26 box) of each of 3 items under a
+ *  space-* distribution — not pixel-exact CSS math, just enough to visually distinguish
+ *  the three patterns (space-between pins the outer two to the edges, space-around
+ *  gives the edges half a gap, space-evenly gives every gap, including the edges, the
+ *  same size). */
 const SPACE_POSITIONS: Record<string, [number, number, number]> = {
-  'space-between': [8, 50, 92],
-  'space-around': [20, 50, 80],
-  'space-evenly': [27, 50, 73],
+  'space-between': [2, 13, 24],
+  'space-around': [5, 13, 21],
+  'space-evenly': [6.5, 13, 19.5],
+}
+
+/** Small double-headed arrow between two adjacent bars, along the main axis — makes the
+ *  "there's equal/unequal space here" reading explicit instead of leaving the viewer to
+ *  infer it purely from the bars' relative positions. */
+function ConnectorArrow({from, to, direction}: {from: number; to: number; direction: 'horizontal' | 'vertical'}) {
+  if (direction === 'horizontal') {
+    const y = 13
+    return (
+      <g stroke='currentColor' strokeWidth='1' strokeLinecap='round' opacity='0.6'>
+        <line x1={from} y1={y} x2={to} y2={y} />
+        <path d={`M${from + 1.6} ${y - 1.4}L${from} ${y}L${from + 1.6} ${y + 1.4}`} fill='none' />
+        <path d={`M${to - 1.6} ${y - 1.4}L${to} ${y}L${to - 1.6} ${y + 1.4}`} fill='none' />
+      </g>
+    )
+  }
+  const x = 13
+  return (
+    <g stroke='currentColor' strokeWidth='1' strokeLinecap='round' opacity='0.6'>
+      <line x1={x} y1={from} x2={x} y2={to} />
+      <path d={`M${x - 1.4} ${from + 1.6}L${x} ${from}L${x + 1.4} ${from + 1.6}`} fill='none' />
+      <path d={`M${x - 1.4} ${to - 1.6}L${x} ${to}L${x + 1.4} ${to - 1.6}`} fill='none' />
+    </g>
+  )
 }
 
 function SpaceBars({distribution, direction}: {distribution: string; direction: 'horizontal' | 'vertical'}) {
-  const positions = SPACE_POSITIONS[distribution] ?? SPACE_POSITIONS['space-evenly']
+  const [p0, p1, p2] = SPACE_POSITIONS[distribution] ?? SPACE_POSITIONS['space-evenly']
+  const barSize = direction === 'horizontal' ? {w: 1.6, h: 8} : {w: 8, h: 1.6}
+  const barAt = (pos: number) =>
+    direction === 'horizontal'
+      ? {x: pos - barSize.w / 2, y: 13 - barSize.h / 2}
+      : {x: 13 - barSize.w / 2, y: pos - barSize.h / 2}
+
   return (
-    <div className='alignment-alt-bars'>
-      {positions.map((pct, i) => (
-        <span
-          key={i}
-          className={direction === 'horizontal' ? 'alignment-alt-bar is-horizontal' : 'alignment-alt-bar is-vertical'}
-          style={direction === 'horizontal' ? {left: `${pct}%`} : {top: `${pct}%`}}
-        />
-      ))}
-    </div>
+    <svg width='26' height='26' viewBox='0 0 26 26' fill='none' className='alignment-alt-bars'>
+      <ConnectorArrow from={p0} to={p1} direction={direction} />
+      <ConnectorArrow from={p1} to={p2} direction={direction} />
+      {[p0, p1, p2].map((pos, i) => {
+        const {x, y} = barAt(pos)
+        return <rect key={i} x={x} y={y} width={barSize.w} height={barSize.h} rx={0.8} fill='currentColor' />
+      })}
+    </svg>
   )
 }
 

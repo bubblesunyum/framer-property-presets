@@ -1,5 +1,5 @@
 import type {CanvasNode} from 'framer-plugin'
-import {useEffect, useState} from 'react'
+import {useCallback, useEffect, useMemo, useState} from 'react'
 import {applyAttributesToSelection} from '../canvas/applyPreset'
 import {captureFromNode} from '../canvas/capturePreset'
 import type {PresetProperties, PresetPropertyKey} from '../types/preset'
@@ -65,6 +65,26 @@ export function DesignPanel({selection}: DesignPanelProps) {
     return () => window.clearInterval(interval)
   }, [primary, primaryId])
 
+  // Stable identities are load-bearing, not just tidy: every field's onChange ultimately
+  // closes over `commit`/`fieldProps`, and this panel re-renders every 600ms from the
+  // live-sync poll above even when nothing changed (well, it shouldn't — but a fresh
+  // function here on every render was cascading into every descendant's effects tearing
+  // down and rebuilding their event listeners on the same cadence, which showed up as a
+  // real bug: a drag-select gesture on LengthField's unit-mode picker could have its
+  // window listeners torn down and rebuilt mid-gesture).
+  const commit = useCallback(
+    (changes: PresetProperties) => {
+      setProperties((prev) => ({...prev, ...changes}))
+      void applyAttributesToSelection(changes, selection)
+    },
+    [selection],
+  )
+
+  const fieldProps = useMemo(
+    () => (key: PresetPropertyKey) => buildFieldProps(key, {properties, isIncluded: () => true, commit, computedSize}),
+    [properties, commit, computedSize],
+  )
+
   if (!primary) {
     return (
       <div className='design-panel-empty'>
@@ -72,14 +92,6 @@ export function DesignPanel({selection}: DesignPanelProps) {
       </div>
     )
   }
-
-  const commit = (changes: PresetProperties) => {
-    setProperties((prev) => ({...prev, ...changes}))
-    void applyAttributesToSelection(changes, selection)
-  }
-
-  const fieldProps = (key: PresetPropertyKey) =>
-    buildFieldProps(key, {properties, isIncluded: () => true, commit, computedSize})
 
   return (
     <div className='property-scroll framer-hide-scrollbar'>
