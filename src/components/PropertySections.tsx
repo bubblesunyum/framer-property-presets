@@ -121,8 +121,15 @@ function SizeAxes({
   const [locked, setLocked] = useState(false)
   const [lockedRatio, setLockedRatio] = useState<number | null>(null)
 
+  // Only concrete lengths (px/%) take part in aspect-ratio linking. Fill ("1fr") is a
+  // flex ratio, not a size — reading its "1" as a dimension made locking collapse the
+  // other axis to ~1px (a real bug: width shown as 1px while Framer rendered 270px).
+  // Fit has no length either. Both return null here, so the lock simply does nothing
+  // until both axes hold real px/% values.
   const numericOf = (field: FieldProps | null) => {
-    const match = typeof field?.value === 'string' ? /^(-?\d*\.?\d+)/.exec(field.value) : null
+    const v = typeof field?.value === 'string' ? field.value : null
+    if (!v || !/^-?\d*\.?\d+(px|%)$/.test(v)) return null
+    const match = /^(-?\d*\.?\d+)/.exec(v)
     return match ? Number(match[1]) : null
   }
 
@@ -162,17 +169,27 @@ function SizeAxes({
     },
   }
 
-  // Each axis's Min/Max expands independently, so both can be open at once — their
-  // fields sit under their own axis's column, all four in one row, never wider than
-  // the Width/Height row above.
-  const [openAxes, setOpenAxes] = useState({width: false, height: false})
-  const toggleAxis = (axis: 'width' | 'height') => setOpenAxes((prev) => ({...prev, [axis]: !prev[axis]}))
   const minWidth = fieldProps('minWidth')
   const maxWidth = fieldProps('maxWidth')
   const minHeight = fieldProps('minHeight')
   const maxHeight = fieldProps('maxHeight')
+
+  // Each axis's Min/Max expands independently, so both can be open at once — their
+  // fields sit under their own axis's column. Auto-open an axis whose min or max is
+  // already set on selection (this component is keyed by node id, so the initializer
+  // re-runs per selection), so an existing constraint is visible without a manual tap.
+  const hasVal = (field: FieldProps | null) => typeof field?.value === 'string' && field.value.length > 0
+  const [openAxes, setOpenAxes] = useState(() => ({
+    width: hasVal(minWidth) || hasVal(maxWidth),
+    height: hasVal(minHeight) || hasVal(maxHeight),
+  }))
+  const toggleAxis = (axis: 'width' | 'height') => setOpenAxes((prev) => ({...prev, [axis]: !prev[axis]}))
   const widthOpen = openAxes.width && Boolean(minWidth || maxWidth)
   const heightOpen = openAxes.height && Boolean(minHeight || maxHeight)
+
+  const parentWidthPx = width?.parentPx ?? null
+  const parentHeightPx = height?.parentPx ?? null
+  const viewportHeightPx = height?.viewportPx ?? null
 
   return (
     <div className='dimensions'>
@@ -196,6 +213,7 @@ function SizeAxes({
           hasMinMax={Boolean(minWidth || maxWidth)}
           open={openAxes.width}
           onToggleOpen={() => toggleAxis('width')}
+          parentPx={parentWidthPx}
         />
         <SizeAxis
           axis='height'
@@ -204,17 +222,23 @@ function SizeAxes({
           hasMinMax={Boolean(minHeight || maxHeight)}
           open={openAxes.height}
           onToggleOpen={() => toggleAxis('height')}
+          parentPx={parentHeightPx}
+          viewportPx={viewportHeightPx}
         />
       </div>
       {(widthOpen || heightOpen) && (
         <div className='size-axes'>
           <div className='size-axis-minmax'>
-            {widthOpen && minWidth && <MinMaxField label='Min' field={minWidth} axis='width' />}
-            {widthOpen && maxWidth && <MinMaxField label='Max' field={maxWidth} axis='width' />}
+            {widthOpen && minWidth && <MinMaxField label='MIN' field={minWidth} axis='width' parentPx={parentWidthPx} />}
+            {widthOpen && maxWidth && <MinMaxField label='MAX' field={maxWidth} axis='width' parentPx={parentWidthPx} />}
           </div>
           <div className='size-axis-minmax'>
-            {heightOpen && minHeight && <MinMaxField label='Min' field={minHeight} axis='height' />}
-            {heightOpen && maxHeight && <MinMaxField label='Max' field={maxHeight} axis='height' />}
+            {heightOpen && minHeight && (
+              <MinMaxField label='MIN' field={minHeight} axis='height' parentPx={parentHeightPx} viewportPx={viewportHeightPx} />
+            )}
+            {heightOpen && maxHeight && (
+              <MinMaxField label='MAX' field={maxHeight} axis='height' parentPx={parentHeightPx} viewportPx={viewportHeightPx} />
+            )}
           </div>
         </div>
       )}
@@ -250,6 +274,8 @@ function SizeAxis({
   hasMinMax,
   open,
   onToggleOpen,
+  parentPx,
+  viewportPx,
 }: {
   axis: 'width' | 'height'
   leftLabel: string
@@ -257,6 +283,8 @@ function SizeAxis({
   hasMinMax: boolean
   open: boolean
   onToggleOpen: () => void
+  parentPx?: number | null
+  viewportPx?: number | null
 }) {
   if (!main) return null
 
@@ -272,24 +300,40 @@ function SizeAxis({
           expanded={open}
           onToggleExpanded={onToggleOpen}
           onChange={main.onChange}
+          parentPx={parentPx}
+          viewportPx={viewportPx}
         />
       </div>
     </div>
   )
 }
 
-function MinMaxField({label, field, axis}: {label: string; field: FieldProps; axis: 'width' | 'height'}) {
+function MinMaxField({
+  label,
+  field,
+  axis,
+  parentPx,
+  viewportPx,
+}: {
+  label: string
+  field: FieldProps
+  axis: 'width' | 'height'
+  parentPx?: number | null
+  viewportPx?: number | null
+}) {
   return (
-    <div className={field.included ? 'mini-field is-included' : 'mini-field'}>
-      <label className='mini-field-label'>{label}</label>
+    <div className={field.included ? 'size-axis-field is-included' : 'size-axis-field'}>
       <LengthField
         value={typeof field.value === 'string' ? field.value : null}
         axis={axis}
         constrained
+        leftLabel={label}
         onChange={field.onChange}
         // Clearing a Min/Max field unsets the constraint (commits null) rather than
         // snapping back to its old value.
         onClear={() => field.onChange(null)}
+        parentPx={parentPx}
+        viewportPx={viewportPx}
       />
     </div>
   )

@@ -22,6 +22,12 @@ export interface FieldProps {
      *  real value for Width/Height while their mode is "Fit" — see LengthField. Absent
      *  in edit mode, where there's no live node to measure. */
     computedPx?: number | null
+    /** Live-only: the parent's content size along this axis (px), used to convert px↔%
+     *  on a unit switch (Width/Height only). Absent in edit mode. */
+    parentPx?: number | null
+    /** Live-only: the canvas viewport size along this axis (px), used to convert to vh
+     *  (Height only). Absent in edit mode. */
+    viewportPx?: number | null
 }
 
 const PIN_KEYS = new Set(["top", "right", "bottom", "left"])

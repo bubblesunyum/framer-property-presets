@@ -88,6 +88,7 @@ export function NumberField({
 }: NumberFieldProps) {
   const [inputValue, setInputValue] = useState(value === null ? '' : String(value))
   const inputRef = useRef<HTMLInputElement>(null)
+  const fieldRef = useRef<HTMLDivElement>(null)
   const isFocusedRef = useRef(false)
   const tracker = useRef(createDragValueTracker(value ?? 0)).current
   const wasDraggedRef = useRef(false)
@@ -142,7 +143,13 @@ export function NumberField({
     wasDraggedRef.current = false
     pointerDownYRef.current = event.clientY
     tracker.start(event.clientY)
-    ;(event.currentTarget as Element).setPointerCapture?.(event.pointerId)
+    // Guard: the browser throws if the pointer is no longer active by the time capture
+    // is requested (a real-but-rare race when a pointer ends between down and this line).
+    try {
+      ;(event.currentTarget as Element).setPointerCapture?.(event.pointerId)
+    } catch {
+      /* pointer already gone — window-level move/up listeners still drive the drag */
+    }
   }
 
   useEffect(() => {
@@ -153,12 +160,22 @@ export function NumberField({
       // threshold — otherwise a click that jitters by a pixel would wrongly skip
       // the focus-and-select-text behavior below.
       if (Math.abs(event.clientY - pointerDownYRef.current) < DRAG_THRESHOLD_PX) return
+      if (!wasDraggedRef.current) {
+        // First move past the threshold — this is now a scrub, not a click. Swap the
+        // cursor to the up/down-resize glyph for the drag's duration: on the field (for
+        // while the pointer is over it) and on <body> (so it holds as the pointer roams
+        // off the field's own bounds mid-drag).
+        document.body.style.cursor = 'ns-resize'
+        if (fieldRef.current) fieldRef.current.style.cursor = 'ns-resize'
+      }
       wasDraggedRef.current = true
       onChange(tracker.move(event.clientY, dragSensitivity, min, max))
     }
     const handleUp = () => {
       if (!tracker.isDragging) return
       tracker.end()
+      document.body.style.cursor = ''
+      if (fieldRef.current) fieldRef.current.style.cursor = ''
       if (!wasDraggedRef.current) {
         inputRef.current?.focus()
         inputRef.current?.select()
@@ -186,6 +203,7 @@ export function NumberField({
 
   return (
     <div
+      ref={fieldRef}
       className={classes.join(' ')}
       style={compact && maxWidthPx ? {maxWidth: maxWidthPx} : undefined}
       onPointerDown={handlePointerDown}

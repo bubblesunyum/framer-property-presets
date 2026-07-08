@@ -264,9 +264,11 @@
   opacity: 1;
 }
 
-/* Min/Max side by side (matches the reference layout), not stacked. */
+/* Per axis column, MIN stacked over MAX (each full column width), matching the Figma
+   Size panel. The two columns (width | height) sit side by side via the .size-axes grid
+   above, so all four constraint fields read as a 2×2 block under the W/H row. */
 .size-axis-minmax {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }

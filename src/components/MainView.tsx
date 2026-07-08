@@ -4,9 +4,7 @@ import {loadAllPresets} from '../storage/presetRepository'
 import type {Preset} from '../types/preset'
 import {DesignPanel} from './DesignPanel'
 import './MainView.css'
-import {PresetList} from './PresetList'
-import {SegmentedControl} from './SegmentedControl'
-import {StickyPresetRow} from './StickyPresetRow'
+import {PresetsSection} from './PresetsSection'
 
 interface MainViewProps {
   selection: CanvasNode[]
@@ -14,17 +12,11 @@ interface MainViewProps {
   onRequestEdit: (preset: Preset) => void
 }
 
-const TABS = [
-  {value: 'style', label: 'Style'},
-  {value: 'presets', label: 'Presets'},
-]
-
-/** Top-level tabbed shell: Style is the live property editor for the current
- *  selection (with a sticky quick-apply preset row above it), Presets is the saved-
- *  preset list. Preset state lives here (not in PresetList) so both surfaces share one
- *  load and stay in sync with each other. */
+/** Single-surface shell (no Style/Presets tabs anymore): a sticky "Presets" section at
+ *  the top — a scrollable strip of quick-apply pills that expands into the full list —
+ *  over the always-visible live property editor for the current selection. Preset state
+ *  lives here so the pill strip and the expanded list share one load and stay in sync. */
 export function MainView({selection, onRequestNew, onRequestEdit}: MainViewProps) {
-  const [tab, setTab] = useState('style')
   const [presets, setPresets] = useState<Preset[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [refreshToken, setRefreshToken] = useState(0)
@@ -54,27 +46,18 @@ export function MainView({selection, onRequestNew, onRequestEdit}: MainViewProps
 
   return (
     <main className='main-view'>
-      <div className='main-view-tabs'>
-        <SegmentedControl options={TABS} value={tab} onChange={setTab} />
-      </div>
+      <PresetsSection
+        presets={presets}
+        isLoading={isLoading}
+        refreshToken={refreshToken}
+        selection={selection}
+        onRequestNew={onRequestNew}
+        onRequestEdit={onRequestEdit}
+        onMoved={handleMoved}
+        onDeleted={handleDeleted}
+      />
       <div className='main-view-content'>
-        {tab === 'style' ? (
-          <>
-            <StickyPresetRow presets={presets} selection={selection} />
-            <DesignPanel selection={selection} />
-          </>
-        ) : (
-          <PresetList
-            presets={presets}
-            isLoading={isLoading}
-            refreshToken={refreshToken}
-            selection={selection}
-            onRequestNew={onRequestNew}
-            onRequestEdit={onRequestEdit}
-            onMoved={handleMoved}
-            onDeleted={handleDeleted}
-          />
-        )}
+        <DesignPanel selection={selection} />
       </div>
     </main>
   )

@@ -4,11 +4,6 @@
     height: 100%;
 }
 
-.main-view-tabs {
-    flex-shrink: 0;
-    padding: 12px 15px 4px;
-}
-
 .main-view-content {
     flex: 1;
     min-height: 0;

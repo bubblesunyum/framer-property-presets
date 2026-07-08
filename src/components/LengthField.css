@@ -4,39 +4,52 @@
   width: 100%;
 }
 
-/* The connected pill: the W/H label anchors the left edge, the min/max caret anchors
-   the right, and the value+unit combo (one centered NumberField with the unit button
-   as its trailing node) floats in the middle. */
+/* The field pill: value group (label + number) on the left as one flex-1 drag surface,
+   the unit chip + trailing control (caret / clear ×) anchored right. */
 .length-field-pill {
   display: flex;
   align-items: center;
+  gap: 8px;
   flex: 1;
   min-width: 0;
   min-height: 32px;
-  padding: 0 4px 0 8px;
+  padding: 6px;
   background: var(--framer-color-bg-tertiary);
-  border-radius: 8px;
+  border-radius: 4px;
 }
 
-/* Anchored to the pill's left edge, ahead of the centered value group. */
-.length-field-label {
-  flex-shrink: 0;
-  font-size: 12px;
-  color: var(--framer-color-text-tertiary);
-  pointer-events: none;
-}
-
-/* Bare inside the shared pill — no chrome/background of its own; fills the middle so
-   the whole span between label and caret stays one drag/click surface. */
+/* The value NumberField fills the middle (left-aligned), so the trailing group is
+   pushed to the right edge. Bare — no chrome of its own inside the pill. */
 .length-field-pill .number-field {
   background: transparent;
   padding: 0;
   min-height: 0;
-  align-self: stretch;
   flex: 1;
   width: auto;
   min-width: 0;
   max-width: none;
+}
+
+/* Label (W/H/MIN/MAX) — dim, 4px before the value. */
+.length-field-pill .number-field-label {
+  margin-right: 4px;
+  font-size: 11px;
+  color: var(--framer-color-text);
+  opacity: 0.54;
+}
+
+.length-field-pill .number-field-input {
+  font-size: 11px;
+}
+
+/* Unit chip + trailing button, right-aligned, always full opacity (never dims with the
+   value — a "fit" or unset field still shows a legible, tappable unit). */
+.length-field-trailing {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
 .length-field-unit-button {
@@ -49,25 +62,18 @@
        all, so it always wins regardless of this class's own specificity. Overriding it
        explicitly is the fix, same as every other bare custom button in this app. */
   width: auto;
+  min-width: 25px;
   height: auto;
   padding: 4px 6px;
-  /* Same surface as a selected choice-control (segmented option, dropdown active row) —
-       the unit button reads as the field's own current-unit "selection". */
+  /* Same surface as a selected choice-control (segmented option, dropdown active row). */
   background: var(--control-selected-bg);
-  color: var(--framer-color-text-primary);
-  border-radius: 6px;
-  font-size: 12px;
+  color: var(--framer-color-text);
+  border-radius: 4px;
+  font-size: 11px;
   font-weight: 500;
-  line-height: 1.2;
+  line-height: 1.1;
+  letter-spacing: 0.11px;
   cursor: pointer;
-}
-
-/* px mode shows no label (the implied default unit) — keep a small clickable footprint
-   so cycling away from px stays discoverable, without an awkward wide blank chip. */
-.length-field-unit-button.is-blank {
-  width: 12px;
-  padding: 4px 0;
-  min-height: 21px;
 }
 
 .length-field-unit-button:hover {
@@ -111,33 +117,24 @@
   color: var(--control-selected-fg);
 }
 
-/* Lives inside the pill now, right after the unit button — no background of its own
-   while collapsed (reads as a plain inline caret, not a separate control), 4px away
-   from the unit button so it doesn't read as attached to it. */
+/* Min/Max expand caret (Width/Height only) — a plain 20px square with the chevron,
+   flipping when the min/max section is open. */
 .length-field-expand,
-.length-field-expand:focus {
+.length-field-clear {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 20px;
   height: 20px;
   flex-shrink: 0;
-  margin-left: 4px;
   padding: 0;
   background: transparent;
   color: var(--framer-color-text-tertiary);
-  border-radius: 108px;
+  border-radius: 2px;
 }
 
-.length-field-expand:hover {
-  color: var(--framer-color-text-secondary);
-}
-
-/* Matches the app's own outermost backdrop while the min/max section it controls is
-   showing, so the caret reads as "sunken into" the rest of the panel rather than as
-   another raised control. */
-.length-field-expand.is-expanded {
-  background: var(--framer-color-bg);
+.length-field-expand:hover,
+.length-field-clear:hover {
   color: var(--framer-color-text-secondary);
 }
 
@@ -147,4 +144,14 @@
 
 .length-field-expand.is-expanded svg {
   transform: rotate(180deg);
+}
+
+/* Small inert dot shown in the trailing slot when a Min/Max field is unset (in place of
+   the clear ×) — matches the reference "empty, tap to set" affordance. */
+.length-field-dot {
+  width: 3px;
+  height: 3px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--framer-color-text-tertiary);
 }

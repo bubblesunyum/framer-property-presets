@@ -13,9 +13,17 @@ interface DesignPanelProps {
 
 interface RectLike {
   getRect?: () => Promise<{width: number; height: number} | null>
+  getParent?: () => Promise<RectLike | null>
 }
 
-const EmptySize = {width: null, height: null} as const
+interface ComputedSize {
+  width: number | null
+  height: number | null
+  parentWidth: number | null
+  parentHeight: number | null
+}
+
+const EmptySize: ComputedSize = {width: null, height: null, parentWidth: null, parentHeight: null}
 
 /** Live edit mode: reflects the currently selected layer's properties and writes every
  *  change straight back to the canvas (to all selected layers that support the key).
@@ -28,20 +36,36 @@ export function DesignPanel({selection}: DesignPanelProps) {
   const [properties, setProperties] = useState<PresetProperties>(() =>
     primary ? captureFromNode(primary).properties : {},
   )
-  const [computedSize, setComputedSize] = useState<{width: number | null; height: number | null}>(EmptySize)
+  const [computedSize, setComputedSize] = useState<ComputedSize>(EmptySize)
 
   // Re-seed from the layer whenever the primary selection changes — keyed on id so a
   // bare re-emit of the same selection doesn't clobber an in-progress edit. Also
-  // re-fetches the node's actual rendered size (used to show Width/Height's value while
-  // their mode is "Fit", which has no numeric value of its own).
+  // re-fetches the node's actual rendered size (shown as Width/Height's value in "Fit"
+  // mode) and its parent's size (used to convert px↔% when the user switches units).
   useEffect(() => {
     setProperties(primary ? captureFromNode(primary).properties : {})
     setComputedSize(EmptySize)
     let active = true
-    void (primary as RectLike | null)?.getRect?.().then((rect) => {
-      if (!active) return
-      setComputedSize({width: rect?.width ?? null, height: rect?.height ?? null})
-    })
+    const node = primary as RectLike | null
+    void (async () => {
+      try {
+        const rect = node?.getRect ? await node.getRect() : null
+        let parentRect: {width: number; height: number} | null = null
+        if (node?.getParent) {
+          const parent = await node.getParent()
+          parentRect = parent?.getRect ? await parent.getRect() : null
+        }
+        if (!active) return
+        setComputedSize({
+          width: rect?.width ?? null,
+          height: rect?.height ?? null,
+          parentWidth: parentRect?.width ?? null,
+          parentHeight: parentRect?.height ?? null,
+        })
+      } catch {
+        if (active) setComputedSize(EmptySize)
+      }
+    })()
     return () => {
       active = false
     }
@@ -81,7 +105,19 @@ export function DesignPanel({selection}: DesignPanelProps) {
   )
 
   const fieldProps = useMemo(
-    () => (key: PresetPropertyKey) => buildFieldProps(key, {properties, isIncluded: () => true, commit, computedSize}),
+    () => (key: PresetPropertyKey) =>
+      buildFieldProps(key, {
+        properties,
+        isIncluded: () => true,
+        commit,
+        computedSize: {
+          ...computedSize,
+          // vh is measured against the canvas viewport height. There's no SDK for the
+          // canvas viewport, so approximate with the parent's height (the nearest known
+          // container) — good enough to keep a vh switch from wildly resizing the box.
+          viewportHeight: computedSize.parentHeight,
+        },
+      }),
     [properties, commit, computedSize],
   )
 

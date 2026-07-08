@@ -31,11 +31,15 @@ interface LengthFieldProps {
    *  callback rather than reverting — Min/Max constraints, which can genuinely be
    *  absent. Omitted for Width/Height, which always hold a value. */
   onClear?: () => void
+  /** The parent's content size along this axis (px) — used to convert px↔% on a unit
+   *  switch so the rendered size stays put. Null/undefined where there's no live parent
+   *  to measure, in which case % conversions keep the current amount instead. */
+  parentPx?: number | null
+  /** The canvas viewport size along this axis (px) — used to convert to `vh`. */
+  viewportPx?: number | null
 }
 
 const MODE_ORDER: LengthMode[] = ['px', '%', 'fit-content', 'fr', 'vh']
-// "px" is the implied default unit — the button stays clickable (to cycle away from
-// it) but shows no text, same reasoning as NumberField's own unit suffix.
 const MODE_LABELS: Record<LengthMode, string> = {'%': '%', px: 'px', fr: 'fill', 'fit-content': 'fit', vh: 'vh'}
 
 function modesFor(axis: 'width' | 'height', constrained?: boolean): LengthMode[] {
@@ -44,6 +48,27 @@ function modesFor(axis: 'width' | 'height', constrained?: boolean): LengthMode[]
   // constraint fields simple; an existing vh value still parses and displays).
   if (constrained) return ['px', '%']
   return axis === 'height' ? MODE_ORDER : MODE_ORDER.filter((mode) => mode !== 'vh')
+}
+
+/** The amount to carry into `toMode` when the user switches units, chosen so the
+ *  element's *rendered* size changes as little as possible. `renderedPx` (the node's
+ *  actual on-screen size along this axis) is the anchor: expressing that same pixel
+ *  size in the new unit keeps the box visually put. Fill is the exception — a flex
+ *  ratio isn't a length, so it always resets to 1. When the pixel context needed for a
+ *  given unit is unknown (no live node / no parent measured), the old amount is kept
+ *  rather than guessing. */
+export function convertedAmount(
+  toMode: LengthMode,
+  ctx: {currentAmount: number | null; renderedPx: number | null; parentPx?: number | null; viewportPx?: number | null},
+): number | null {
+  if (toMode === 'fr') return 1
+  if (toMode === 'fit-content') return null
+  const px = ctx.renderedPx
+  if (px == null) return ctx.currentAmount
+  if (toMode === 'px') return Math.round(px)
+  if (toMode === '%') return ctx.parentPx ? Math.round((px / ctx.parentPx) * 1000) / 10 : ctx.currentAmount
+  if (toMode === 'vh') return ctx.viewportPx ? Math.round((px / ctx.viewportPx) * 1000) / 10 : ctx.currentAmount
+  return ctx.currentAmount
 }
 
 function parseLength(raw: string | null): {mode: LengthMode; amount: number | null} {
@@ -80,9 +105,12 @@ export function LengthField({
   onToggleExpanded,
   leftLabel,
   onClear,
+  parentPx,
+  viewportPx,
 }: LengthFieldProps) {
   const parsed = parseLength(value)
   const isFit = parsed.mode === 'fit-content'
+  const hasValue = parsed.amount != null
   // Memoized so UnitButton's drag/click effect (which depends on `modes`/`onSelect`)
   // doesn't tear down and rebuild its window listeners on every render of this field —
   // it used to recreate a fresh array/closure every time regardless of whether the axis
@@ -92,45 +120,69 @@ export function LengthField({
 
   const setMode = useCallback(
     (mode: LengthMode) => {
-      // A Fill value is a flex ratio, not a length — carrying over whatever number the
-      // field last held in px/% mode would read as a nonsensical flex ratio, so it
-      // always resets to 1 rather than keeping the old amount.
-      onChange(serializeLength(mode, mode === 'fr' ? 1 : parsed.amount))
+      // Convert rather than reset, so switching units barely moves the rendered box
+      // (see convertedAmount) — Fill is the lone exception, always 1.
+      const amount = convertedAmount(mode, {currentAmount: parsed.amount, renderedPx: computedPx ?? null, parentPx, viewportPx})
+      onChange(serializeLength(mode, amount))
     },
-    [onChange, parsed.amount],
+    [onChange, parsed.amount, computedPx, parentPx, viewportPx],
   )
 
   return (
     <div className='length-field-row'>
       <div className='length-field-pill'>
-        {/* Label and caret anchor the pill's two edges; the value+unit combo (one
-            NumberField with the unit button as its trailing node, so the whole middle
-            stays a single drag surface) floats centered between them. */}
-        {leftLabel && <span className='length-field-label'>{leftLabel}</span>}
+        {/* Label + value (left, the drag surface — dims together when unset/fit); the
+            unit chip and trailing control (caret for W/H, clear ×/dot for Min/Max) sit
+            right and stay full-opacity even when the value is dimmed. */}
         <NumberField
           value={isFit ? (computedPx ?? null) : parsed.amount}
-          unit={undefined} // keep this, we don't want units here
+          leftLabel={leftLabel}
           disabled={isFit}
-          dim={!isFit && parsed.amount == null}
-          centered
-          trailing={<UnitButton mode={parsed.mode} modes={modes} onSelect={setMode} />}
+          dim={!isFit && !hasValue}
           onChange={(amount) => onChange(serializeLength(parsed.mode, amount))}
           onClear={onClear}
         />
-        {expandable && (
-          <button
-            type='button'
-            className={expanded ? 'length-field-expand is-expanded' : 'length-field-expand'}
-            onClick={onToggleExpanded}
-            aria-expanded={expanded}
-            aria-label={expanded ? 'Hide min/max' : 'Show min/max'}
-            title={expanded ? 'Hide min/max' : 'Show min/max'}
-          >
-            <ExpandCaretIcon />
-          </button>
-        )}
+        <div className='length-field-trailing'>
+          <UnitButton mode={parsed.mode} modes={modes} onSelect={setMode} />
+          {expandable && (
+            <button
+              type='button'
+              className={expanded ? 'length-field-expand is-expanded' : 'length-field-expand'}
+              onClick={onToggleExpanded}
+              aria-expanded={expanded}
+              aria-label={expanded ? 'Hide min/max' : 'Show min/max'}
+              title={expanded ? 'Hide min/max' : 'Show min/max'}
+            >
+              <ExpandCaretIcon />
+            </button>
+          )}
+          {constrained &&
+            (hasValue ? (
+              <button
+                type='button'
+                className='length-field-clear'
+                onClick={onClear}
+                aria-label='Clear constraint'
+                title='Clear'
+              >
+                <CloseIcon />
+              </button>
+            ) : (
+              // Unset: a small inert dot in place of the clear button (matches the
+              // reference — the field reads as "empty, tap to set" rather than "clearable").
+              <span className='length-field-dot' aria-hidden='true' />
+            ))}
+        </div>
       </div>
     </div>
+  )
+}
+
+function CloseIcon() {
+  return (
+    <svg width='12' height='12' viewBox='0 0 12 12' fill='none'>
+      <path d='M3 3l6 6M9 3l-6 6' stroke='currentColor' strokeWidth='1.3' strokeLinecap='round' />
+    </svg>
   )
 }
 
@@ -263,9 +315,7 @@ function UnitButton({mode, modes, onSelect}: UnitButtonProps) {
       <button
         ref={buttonRef}
         type='button'
-        // px (the implied unit) has no label — `is-blank` shrinks the chip to a small
-        // clickable stub instead of an awkward wide empty pill.
-        className={MODE_LABELS[mode] ? 'length-field-unit-button' : 'length-field-unit-button is-blank'}
+        className='length-field-unit-button'
         onPointerDown={handlePointerDown}
         onContextMenu={handleContextMenu}
       >

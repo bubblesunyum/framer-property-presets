@@ -61,6 +61,7 @@ const fakeNode = {
         console.log("[preview] setAttributes", attributes)
     },
     getRect: async () => ({x: 0, y: 0, width: 180, height: 64}),
+    getParent: async () => ({getRect: async () => ({x: 0, y: 0, width: 400, height: 400})}),
 }
 
 export const framer = {
