@@ -19,6 +19,7 @@ interface PresetListItemProps {
     onEdit: (preset: Preset) => void
 }
 
+/** Synced to the project (remote) — a plain cloud. */
 function SyncedIcon() {
     return (
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -32,11 +33,17 @@ function SyncedIcon() {
     )
 }
 
+/** Saved to this device (local) — the same cloud with a slash through it ("not synced"). */
 function LocalIcon() {
     return (
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-            <rect x="2" y="3.5" width="14" height="9" rx="1.4" stroke="currentColor" strokeWidth="1.3" />
-            <path d="M6.5 15.5h5M9 12.5v3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+            <path
+                d="M5.4 12.3h7.4a3 3 0 0 0 0-6 4.3 4.3 0 0 0-8.2-1.5A3.6 3.6 0 0 0 5.4 12.3Z"
+                stroke="currentColor"
+                strokeWidth="1.3"
+                strokeLinejoin="round"
+            />
+            <path d="M3 3l12 12" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
         </svg>
     )
 }

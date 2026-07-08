@@ -18,6 +18,9 @@ export interface FieldProps {
     /** Edit mode only: clicking the label toggles this field out of/into the preset.
      *  Omitted in create mode, where inclusion is inferred instead (see PresetEditor). */
     onToggleIncluded?: () => void
+    /** Edit mode only: clearing this field (backspace to empty, then blur) nulls it and
+     *  removes it from the preset. Omitted elsewhere. */
+    onClear?: () => void
     /** Live-only: the node's actual rendered pixel size, shown (disabled) in place of a
      *  real value for Width/Height while their mode is "Fit" — see LengthField. Absent
      *  in edit mode, where there's no live node to measure. */
@@ -28,6 +31,9 @@ export interface FieldProps {
     /** Live-only: the canvas viewport size along this axis (px), used to convert to vh
      *  (Height only). Absent in edit mode. */
     viewportPx?: number | null
+    /** Live-only: whether the node's parent is a stack (fill only applies inside one).
+     *  Null/absent = unknown, keep every unit option. */
+    parentIsStack?: boolean | null
 }
 
 const PIN_KEYS = new Set(["top", "right", "bottom", "left"])
@@ -61,7 +67,8 @@ export function renderControl(
     descriptor: PropertyDescriptor,
     value: unknown,
     onChange: (value: unknown) => void,
-    computedPx?: number | null
+    computedPx?: number | null,
+    onClear?: () => void
 ) {
     switch (descriptor.control) {
         case "dimension":
@@ -75,12 +82,13 @@ export function renderControl(
                     // dedicated GapPaddingRow layout (see PropertySections.tsx) — it gets
                     // a wider compact cap there so Padding's own box still gets most of
                     // the row's width.
-                    compact={descriptor.key === "radius" || descriptor.key === "gap"}
+                    compact={descriptor.key === "borderRadius" || descriptor.key === "gap"}
                     maxWidthPx={descriptor.key === "gap" ? 108 : undefined}
                     dim={value == null}
                     accentLabel={PIN_KEYS.has(descriptor.key)}
-                    dragSensitivity={descriptor.key === "radius" ? 0.4 : 1}
+                    dragSensitivity={descriptor.key === "borderRadius" ? 0.4 : 1}
                     onChange={(next) => onChange(`${next}${descriptor.unit}`)}
+                    onClear={onClear}
                 />
             )
         case "size-length":
@@ -91,6 +99,7 @@ export function renderControl(
                     constrained={descriptor.constrained}
                     computedPx={computedPx}
                     onChange={onChange}
+                    onClear={onClear}
                 />
             )
         case "number":
@@ -100,6 +109,7 @@ export function renderControl(
                     min={descriptor.min}
                     dim={value == null}
                     onChange={onChange}
+                    onClear={onClear}
                 />
             )
         case "length":
@@ -162,9 +172,9 @@ export function renderControl(
                 />
             )
         case "align-grid":
-            // `value` is the composite {direction, distribution, alignment} assembled in
-            // buildFieldProps; onChange sends back the two stack keys the grid resolved.
-            return <AlignmentGrid value={value as AlignmentValue} onChange={onChange} />
+            // Rendered directly by AlignmentZIndexRow (which owns the page state + header
+            // arrows); this generic fallback just shows the first page.
+            return <AlignmentGrid value={value as AlignmentValue} onChange={onChange} showAlternates={false} />
         case "select":
             return (
                 <Dropdown
@@ -193,7 +203,7 @@ export function renderControl(
 /** Full-width row: label on the left, control filling the rest — for properties that
  *  don't naturally pair with a neighbor. Dims when not (yet) included, rather than
  *  showing a separate include/exclude checkbox. */
-export function PropertyRow({ descriptor, value, included, onChange, onToggleIncluded, computedPx }: FieldProps) {
+export function PropertyRow({ descriptor, value, included, onChange, onToggleIncluded, computedPx, onClear }: FieldProps) {
     // Padding can grow taller as it expands to 4 sides — top-align the row so the label
     // and the control's own expand button don't drift down as it grows. (Alignment used
     // to need this too, but it's now rendered full-width with its own label above it,
@@ -210,7 +220,7 @@ export function PropertyRow({ descriptor, value, included, onChange, onToggleInc
                 {descriptor.label}
             </label>
             <div className="property-row-control" onClick={activateNestedFieldOnEmptyClick}>
-                {renderControl(descriptor, value, onChange, computedPx)}
+                {renderControl(descriptor, value, onChange, computedPx, onClear)}
             </div>
         </div>
     )
@@ -218,17 +228,17 @@ export function PropertyRow({ descriptor, value, included, onChange, onToggleInc
 
 /** Bare control with no label at all — for bespoke layouts (the Position cross) where
  *  the field's identity is already conveyed some other way (e.g. an inline suffix). */
-export function PropertyControlOnly({ descriptor, value, included, onChange, computedPx }: FieldProps) {
+export function PropertyControlOnly({ descriptor, value, included, onChange, computedPx, onClear }: FieldProps) {
     return (
         <div className={included ? "control-only is-included" : "control-only"} onClick={activateNestedFieldOnEmptyClick}>
-            {renderControl(descriptor, value, onChange, computedPx)}
+            {renderControl(descriptor, value, onChange, computedPx, onClear)}
         </div>
     )
 }
 
 /** Compact field for side-by-side pairs (Left/Top, Width/Height, and so on) — label
  *  sits above the control instead of beside it, so two comfortably fit one row. */
-export function PropertyMiniField({ descriptor, value, included, onChange, onToggleIncluded, computedPx }: FieldProps) {
+export function PropertyMiniField({ descriptor, value, included, onChange, onToggleIncluded, computedPx, onClear }: FieldProps) {
     return (
         <div className={included ? "mini-field is-included" : "mini-field"}>
             <label
@@ -237,7 +247,7 @@ export function PropertyMiniField({ descriptor, value, included, onChange, onTog
             >
                 {descriptor.label}
             </label>
-            {renderControl(descriptor, value, onChange, computedPx)}
+            {renderControl(descriptor, value, onChange, computedPx, onClear)}
         </div>
     )
 }

@@ -4,85 +4,100 @@
   width: 100%;
 }
 
-/* The field pill: value group (label + number) on the left as one flex-1 drag surface,
-   the unit chip + trailing control (caret / clear ×) anchored right. */
+/* The field pill: label + value chip + unit chip on the left, the trailing control
+   (min/max caret, or clear ×/dot) anchored right. */
 .length-field-pill {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
   flex: 1;
   min-width: 0;
-  height: 32px;
-  padding: 6px;
+  min-height: 36px;
+  padding: 8px;
   background: var(--framer-color-bg-tertiary);
   border-radius: 8px;
 }
 
-/* The value NumberField fills the middle (left-aligned), so the trailing group is
-   pushed to the right edge. Bare — no chrome of its own inside the pill. */
-.length-field-pill .number-field {
-  background: transparent;
-  padding: 0;
-  min-height: 0;
-  flex: 1;
-  width: auto;
-  min-width: 0;
-  max-width: none;
-}
-
-/* Label (W/H/MIN/MAX) — dim, 4px before the value. */
-.length-field-pill .number-field-label {
-  margin-right: 4px;
-  font-size: 11px;
-  color: var(--framer-color-text);
-  opacity: 0.54;
-}
-
-.length-field-pill .number-field-input {
-  font-size: 11px;
-}
-
-/* Unit chip + trailing button, right-aligned, always full opacity (never dims with the
-   value — a "fit" or unset field still shows a legible, tappable unit). */
-.length-field-trailing {
+.length-field-main {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 4px;
-  flex-shrink: 0;
+  gap: 8px;
+  min-width: 0;
 }
 
+/* Left label (W/H/MIN/MAX) — same size/color as every other field label. */
+.length-field-label {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--framer-color-text-tertiary);
+  cursor: text;
+}
+
+/* When the field is unset, the label matches the color of the value shown in "fit" mode
+   (a disabled read-only value), so an empty field reads consistently. */
+.length-field-label.is-dim {
+  color: var(--framer-color-text-secondary);
+  opacity: 0.6;
+}
+
+/* Value chip + unit chip, side by side. */
+.length-field-value-unit {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+/* The value chip is the NumberField, restyled as a small centered box. A *fixed* 20px
+   height (matching the Figma value chip) — not min-height — so framer.css's `input {
+   height: 30px }` can't inflate the chip, which would in turn push the whole pill past
+   its intended 36px. */
+.length-field-value-unit .number-field {
+  min-width: 25px;
+  width: auto;
+  height: 20px;
+  min-height: 0;
+  padding: 0 6px;
+  justify-content: center;
+  background: var(--control-selected-bg);
+  border-radius: 4px;
+}
+
+.length-field-value-unit .number-field .number-field-input {
+  font-size: 11px;
+  text-align: center;
+  color: var(--framer-color-text);
+}
+
+/* Unit chip — same box as the value chip. */
 .length-field-unit-button {
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  /* framer.css's generic `button` rule forces a literal `width: 134px` — with nothing
-       else declaring `width` here to contest it, that's the only rule that applies at
-       all, so it always wins regardless of this class's own specificity. Overriding it
-       explicitly is the fix, same as every other bare custom button in this app. */
+  /* framer.css's generic `button` rule forces a literal `width: 134px` *and* a `height:
+     30px` — override both so the chip hugs its label and matches the 20px value chip
+     beside it (an uncorrected 30px here was the tallest child, stretching the pill to
+     ~46px). */
   width: auto;
   min-width: 25px;
-  height: auto;
-  padding: 4px 6px;
-  /* Same surface as a selected choice-control (segmented option, dropdown active row). */
+  height: 20px;
+  min-height: 0;
+  padding: 0 6px;
   background: var(--control-selected-bg);
   color: var(--framer-color-text);
   border-radius: 4px;
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 400;
   line-height: 1.1;
   letter-spacing: 0.11px;
   cursor: pointer;
 }
 
-.length-field-unit-button:hover {
-  color: var(--framer-color-text);
-}
-
 .length-field-unit-list {
   position: fixed;
-  min-width: 92px;
+  min-width: 72px;
   background: var(--framer-color-bg-secondary);
   border: 1px solid var(--framer-color-divider);
   border-radius: 10px;
@@ -117,12 +132,11 @@
   color: var(--control-selected-fg);
 }
 
-/* Min/Max expand caret (Width/Height only) — a plain 20px square with the chevron,
-   flipping when the min/max section is open. */
+/* Trailing control (Min/Max caret, or clear ×/placeholder dot) — a 20px box on the
+   app's own backdrop color, so it reads as sunken next to the raised value/unit chips. */
 .length-field-expand,
 .length-field-clear,
-.length-field-dot-area,
-.length-field-expand:focus {
+.length-field-dot-area {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -130,9 +144,9 @@
   height: 20px;
   flex-shrink: 0;
   padding: 0;
-  background: transparent;
+  background: var(--framer-color-bg);
   color: var(--framer-color-text-tertiary);
-  border-radius: 2px;
+  border-radius: 4px;
 }
 
 .length-field-expand:hover,
@@ -148,12 +162,7 @@
   transform: rotate(180deg);
 }
 
-.length-field-expand.is-expanded {
-  background: var(--framer-color-bg-secondary);
-}
-
-/* Small inert dot shown in the trailing slot when a Min/Max field is unset (in place of
-   the clear ×) — matches the reference "empty, tap to set" affordance. */
+/* Small placeholder dot shown when a Min/Max field is unset (in place of the clear ×). */
 .length-field-dot {
   width: 3px;
   height: 3px;

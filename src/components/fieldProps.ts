@@ -51,6 +51,9 @@ export interface FieldPropsConfig {
   commit: (changes: PresetProperties) => void
   /** Edit mode only: toggle a key in/out of the saved preset. Omitted elsewhere. */
   onToggleIncluded?: (key: PresetPropertyKey) => void
+  /** Edit mode only: clearing a field's value (backspace to empty, then blur/Enter)
+   *  nulls the key and removes it from the preset. Omitted elsewhere. */
+  onClear?: (key: PresetPropertyKey) => void
   /** Live-only: the selected node's actual rendered size, its parent's content size,
    *  and the canvas viewport size. Rendered size shows Width/Height's read-only value in
    *  "Fit" mode; parent/viewport sizes drive px↔%/vh conversion on a unit switch.
@@ -62,6 +65,7 @@ export interface FieldPropsConfig {
     parentHeight?: number | null
     viewportWidth?: number | null
     viewportHeight?: number | null
+    parentIsStack?: boolean | null
   }
 }
 
@@ -77,6 +81,7 @@ export function buildFieldProps(key: PresetPropertyKey, config: FieldPropsConfig
 
   const included = config.isIncluded(key)
   const onToggleIncluded = config.onToggleIncluded ? () => config.onToggleIncluded!(key) : undefined
+  const onClear = config.onClear ? () => config.onClear!(key) : undefined
 
   // Flow folds direction into Row/Column, so one control drives two keys.
   if (key === 'layout') {
@@ -131,6 +136,7 @@ export function buildFieldProps(key: PresetPropertyKey, config: FieldPropsConfig
     included,
     onChange: (value) => config.commit({[key]: value}),
     onToggleIncluded,
+    onClear,
     computedPx:
       key === 'width' ? (config.computedSize?.width ?? null) : key === 'height' ? (config.computedSize?.height ?? null) : undefined,
     parentPx:
@@ -145,5 +151,7 @@ export function buildFieldProps(key: PresetPropertyKey, config: FieldPropsConfig
         : key === 'height'
           ? (config.computedSize?.viewportHeight ?? null)
           : undefined,
+    parentIsStack:
+      key === 'width' || key === 'height' ? (config.computedSize?.parentIsStack ?? null) : undefined,
   }
 }

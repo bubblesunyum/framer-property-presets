@@ -53,7 +53,7 @@ const fakeNode = {
     gap: "10px",
     padding: "16px",
     overflow: "visible",
-    radius: "8px",
+    borderRadius: "8px",
     opacity: 1,
     visible: true,
     zIndex: null,

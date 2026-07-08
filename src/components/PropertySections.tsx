@@ -1,6 +1,7 @@
 import {useState, type ReactNode} from 'react'
 import {EDITOR_ROWS, type EditorRow} from '../schema/editorLayout'
 import type {PresetPropertyKey} from '../types/preset'
+import {AlignmentGrid, AlignmentPager, type AlignmentValue} from './AlignmentGrid'
 import {LengthField} from './LengthField'
 import {PinWidget} from './PinWidget'
 import './PropertySections.css'
@@ -192,6 +193,7 @@ function SizeAxes({
   const parentWidthPx = width?.parentPx ?? null
   const parentHeightPx = height?.parentPx ?? null
   const viewportHeightPx = height?.viewportPx ?? null
+  const parentIsStack = width?.parentIsStack ?? height?.parentIsStack ?? null
 
   return (
     <div className='dimensions'>
@@ -216,6 +218,7 @@ function SizeAxes({
           open={openAxes.width}
           onToggleOpen={() => toggleAxis('width')}
           parentPx={parentWidthPx}
+          parentIsStack={parentIsStack}
         />
         <SizeAxis
           axis='height'
@@ -226,6 +229,7 @@ function SizeAxes({
           onToggleOpen={() => toggleAxis('height')}
           parentPx={parentHeightPx}
           viewportPx={viewportHeightPx}
+          parentIsStack={parentIsStack}
         />
       </div>
       {(widthOpen || heightOpen) && (
@@ -294,6 +298,7 @@ function SizeAxis({
   onToggleOpen,
   parentPx,
   viewportPx,
+  parentIsStack,
 }: {
   axis: 'width' | 'height'
   leftLabel: string
@@ -303,6 +308,7 @@ function SizeAxis({
   onToggleOpen: () => void
   parentPx?: number | null
   viewportPx?: number | null
+  parentIsStack?: boolean | null
 }) {
   if (!main) return null
 
@@ -318,8 +324,10 @@ function SizeAxis({
           expanded={open}
           onToggleExpanded={onToggleOpen}
           onChange={main.onChange}
+          onClear={main.onClear}
           parentPx={parentPx}
           viewportPx={viewportPx}
+          parentIsStack={parentIsStack}
         />
       </div>
     </div>
@@ -347,9 +355,9 @@ function MinMaxField({
         constrained
         leftLabel={label}
         onChange={field.onChange}
-        // Clearing a Min/Max field unsets the constraint (commits null) rather than
-        // snapping back to its old value.
-        onClear={() => field.onChange(null)}
+        // Clearing a Min/Max field unsets it: in edit mode `field.onClear` also removes
+        // it from the preset; in the live panel it just commits null.
+        onClear={field.onClear ?? (() => field.onChange(null))}
         parentPx={parentPx}
         viewportPx={viewportPx}
       />
@@ -482,24 +490,32 @@ function FlowWrapRow({flow, wrap}: {flow: FieldProps; wrap: FieldProps | null}) 
   )
 }
 
-/** Alignment grid + Z-Index side by side in one row: the square grid (with its own label
- *  above) on the left, the vertical Z-Index stack (its own label above) on the right.
- *  Either half can be absent — a non-stack node has no alignment grid; a node without
- *  z-index support has no Z-Index — in which case the present one just sits alone. */
+/** Elevation (Z-Index) + Alignment grid side by side in one row. Elevation sits first
+ *  (left) so it stays put when Alignment — which only exists for a stack — appears or
+ *  disappears between selections. The alignment grid's two-page pager lives in its own
+ *  header row, at the far right next to the "Alignment" title. */
 function AlignmentZIndexRow({alignment, zIndex}: {alignment: FieldProps | null; zIndex: FieldProps | null}) {
+  const [showAlternates, setShowAlternates] = useState(false)
   if (!alignment && !zIndex) return null
   return (
     <div className='alignment-zindex-row'>
-      {alignment && (
-        <div className={alignment.included ? 'alignment-block is-included' : 'alignment-block'}>
-          <h4 className='property-fullwidth-label'>{alignment.descriptor.label}</h4>
-          {renderControl(alignment.descriptor, alignment.value, alignment.onChange)}
-        </div>
-      )}
       {zIndex && (
         <div className={zIndex.included ? 'zindex-block is-included' : 'zindex-block'}>
           <h4 className='property-fullwidth-label'>{zIndex.descriptor.label}</h4>
           {renderControl(zIndex.descriptor, zIndex.value, zIndex.onChange)}
+        </div>
+      )}
+      {alignment && (
+        <div className={alignment.included ? 'alignment-block is-included' : 'alignment-block'}>
+          <div className='alignment-header'>
+            <h4 className='property-fullwidth-label'>{alignment.descriptor.label}</h4>
+            <AlignmentPager showAlternates={showAlternates} onChange={setShowAlternates} />
+          </div>
+          <AlignmentGrid
+            value={alignment.value as AlignmentValue}
+            onChange={alignment.onChange}
+            showAlternates={showAlternates}
+          />
         </div>
       )}
     </div>

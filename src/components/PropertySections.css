@@ -108,7 +108,7 @@
   align-items: center;
   justify-content: center;
   width: 32px;
-  height: 32px;
+  height: 36px;
   flex-shrink: 0;
   padding: 0;
   background: none;
@@ -127,7 +127,7 @@
   display: flex;
   gap: 8px;
   padding: 0 15px;
-  min-height: 32px;
+  min-height: 36px;
 }
 
 .gap-padding-row-gap {
@@ -154,6 +154,18 @@
   flex-direction: column;
   /* gap: 4px; */
   transition: opacity 0.15s;
+}
+
+/* "Alignment" title on the left, the two page arrows anchored far right (6px apart). */
+.alignment-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.alignment-header .property-fullwidth-label {
+  margin: 0;
 }
 
 .zindex-block {

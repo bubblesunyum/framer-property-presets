@@ -14,6 +14,7 @@ interface DesignPanelProps {
 interface RectLike {
   getRect?: () => Promise<{width: number; height: number} | null>
   getParent?: () => Promise<RectLike | null>
+  layout?: unknown
 }
 
 interface ComputedSize {
@@ -21,9 +22,16 @@ interface ComputedSize {
   height: number | null
   parentWidth: number | null
   parentHeight: number | null
+  parentIsStack: boolean | null
 }
 
-const EmptySize: ComputedSize = {width: null, height: null, parentWidth: null, parentHeight: null}
+const EmptySize: ComputedSize = {
+  width: null,
+  height: null,
+  parentWidth: null,
+  parentHeight: null,
+  parentIsStack: null,
+}
 
 /** Live edit mode: reflects the currently selected layer's properties and writes every
  *  change straight back to the canvas (to all selected layers that support the key).
@@ -38,22 +46,37 @@ export function DesignPanel({selection}: DesignPanelProps) {
   )
   const [computedSize, setComputedSize] = useState<ComputedSize>(EmptySize)
 
-  // Re-seed from the layer whenever the primary selection changes — keyed on id so a
-  // bare re-emit of the same selection doesn't clobber an in-progress edit. Also
-  // re-fetches the node's actual rendered size (shown as Width/Height's value in "Fit"
-  // mode) and its parent's size (used to convert px↔% when the user switches units).
-  useEffect(() => {
+  // Re-seed the properties *synchronously during render* the moment the selection's id
+  // changes — not in an effect, which runs after render. PropertySections is keyed by
+  // this same id, so it remounts on a selection change; if the re-seed lagged behind in
+  // an effect, that fresh mount would read the *previous* layer's properties for its
+  // one-shot initializers (e.g. SizeAxes' min/max auto-open), leaving Min/Max expanded
+  // on a layer that has no constraints. Setting state during render is the React-blessed
+  // "adjust state when a prop changed" pattern (it re-renders before committing).
+  const [seededId, setSeededId] = useState(primaryId)
+  if (seededId !== primaryId) {
+    setSeededId(primaryId)
     setProperties(primary ? captureFromNode(primary).properties : {})
     setComputedSize(EmptySize)
+  }
+
+  // Fetch the node's actual rendered size (shown as Width/Height's value in "Fit" mode)
+  // and its parent's size (used to convert px↔% when the user switches units) — async,
+  // so it stays in an effect.
+  useEffect(() => {
     let active = true
     const node = primary as RectLike | null
     void (async () => {
       try {
         const rect = node?.getRect ? await node.getRect() : null
         let parentRect: {width: number; height: number} | null = null
+        let parentIsStack: boolean | null = null
         if (node?.getParent) {
           const parent = await node.getParent()
           parentRect = parent?.getRect ? await parent.getRect() : null
+          // "Fill" (a flex ratio) only applies inside a stack; note whether the parent is
+          // one so the unit picker can hide fill when it doesn't apply.
+          if (parent && 'layout' in parent) parentIsStack = parent.layout === 'stack'
         }
         if (!active) return
         setComputedSize({
@@ -61,6 +84,7 @@ export function DesignPanel({selection}: DesignPanelProps) {
           height: rect?.height ?? null,
           parentWidth: parentRect?.width ?? null,
           parentHeight: parentRect?.height ?? null,
+          parentIsStack,
         })
       } catch {
         if (active) setComputedSize(EmptySize)

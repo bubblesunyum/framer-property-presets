@@ -93,6 +93,14 @@ export function NumberField({
   const tracker = useRef(createDragValueTracker(value ?? 0)).current
   const wasDraggedRef = useRef(false)
 
+  // The drag listeners are attached once (deps below are stable) — reading these from a
+  // ref instead of the effect's closure means a fresh `onChange` (LengthField/SizeAxes
+  // recreate theirs every render) no longer tears down and re-adds the window listeners
+  // mid-drag, which was dropping move events and leaving the field's shown value behind
+  // what was actually committed to the canvas.
+  const dragRef = useRef({onChange, min, max, dragSensitivity})
+  dragRef.current = {onChange, min, max, dragSensitivity}
+
   // Resync the local buffer whenever the value coming from outside changes — e.g. a
   // linked Width/Height edit (see PropertySections' aspect-ratio lock) or a
   // background poll picking up an edit made in Framer's own panel (see DesignPanel) —
@@ -153,7 +161,6 @@ export function NumberField({
   }
 
   useEffect(() => {
-    if (disabled || dragSensitivity === 0) return
     const handleMove = (event: PointerEvent) => {
       if (!tracker.isDragging) return
       // Only counts as a drag once the pointer has actually moved past a small
@@ -169,7 +176,13 @@ export function NumberField({
         if (fieldRef.current) fieldRef.current.style.cursor = 'ns-resize'
       }
       wasDraggedRef.current = true
-      onChange(tracker.move(event.clientY, dragSensitivity, min, max))
+      const {onChange: liveOnChange, min: liveMin, max: liveMax, dragSensitivity: sens} = dragRef.current
+      const next = tracker.move(event.clientY, sens, liveMin, liveMax)
+      // Update the shown value directly — the prop round-trip (onChange → commit → new
+      // `value` → resync effect) is skipped while the field is focused, so a drag begun
+      // after a click would otherwise scrub the canvas while the field's text sat still.
+      setInputValue(String(next))
+      liveOnChange(next)
     }
     const handleUp = () => {
       if (!tracker.isDragging) return
@@ -187,7 +200,7 @@ export function NumberField({
       window.removeEventListener('pointermove', handleMove)
       window.removeEventListener('pointerup', handleUp)
     }
-  }, [tracker, dragSensitivity, min, max, onChange, disabled])
+  }, [tracker])
 
   const classes = ['number-field']
   if (compact) classes.push('is-compact')

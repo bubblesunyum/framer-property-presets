@@ -3,8 +3,9 @@
   display: inline-flex;
   align-items: center;
   width: 100%;
-  min-height: 32px;
-  padding: 0 10px;
+  min-height: 36px;
+  /* Matches the length-field pill (6px) so every field shares one inner padding. */
+  padding: 8px;
   background: var(--framer-color-bg-tertiary);
   border-radius: 8px;
   cursor: text;
@@ -82,6 +83,12 @@
   flex: 0 1 auto;
   min-width: 1ch;
   width: auto;
+  /* framer.css forces `input { height: 30px }`, which — added to this field's own 8px
+     top/bottom padding — inflated every number field to ~46px and every size pill to
+     ~54px, blowing past the intended uniform ~36px and making rows visibly different
+     heights. Collapse the input to its own line box so the field's padding + min-height
+     alone decide the height, keeping all fields the same size. */
+  height: auto;
   background: transparent;
   border: none;
   box-shadow: none;
@@ -89,6 +96,7 @@
   margin: 0;
   text-align: left;
   color: var(--framer-color-text);
+  line-height: 1.2;
   /* Without this, a native number spinner still reserves its own width even though
        no arrows are visible (the input is sized narrower than that reserved space via
        the ch-based inline width below), which was clipping the last digit or two. */

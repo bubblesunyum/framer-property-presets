@@ -85,7 +85,7 @@ export function PresetEditor(props: PresetEditorProps) {
           // that guard in applyPreset.ts).
           properties: withDefaults(props.preset.properties, {
             overflow: null,
-            radius: null,
+            borderRadius: null,
             opacity: null,
             visible: null,
             zIndex: null,
@@ -159,12 +159,20 @@ export function PresetEditor(props: PresetEditorProps) {
     })
   }
 
+  // Edit mode: clearing a field (backspace to empty, then blur) nulls it and drops it
+  // from the preset — the same "removed" set the label-toggle uses.
+  const clearField = (key: PresetPropertyKey) => {
+    commit({[key]: null})
+    setRemovedKeys((prev) => new Set(prev).add(key))
+  }
+
   const fieldProps = (key: PresetPropertyKey) =>
     buildFieldProps(key, {
       properties: draft.properties,
       isIncluded,
       commit,
       onToggleIncluded: props.mode === 'edit' ? toggleIncluded : undefined,
+      onClear: props.mode === 'edit' ? clearField : undefined,
       computedSize: props.mode === 'create' ? computedSize : undefined,
     })
 

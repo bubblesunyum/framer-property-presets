@@ -37,7 +37,7 @@ export type PresetPropertyKey =
     | "gridRowHeight"
     // Appearance
     | "overflow"
-    | "radius"
+    | "borderRadius"
     | "opacity"
     | "visible"
     | "squircle"

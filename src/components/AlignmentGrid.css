@@ -138,18 +138,15 @@
   display: block;
 }
 
-/* Up/down arrow pager, full height of the square grid beside it. The arrow for the
-   currently-shown page is white; the other dims to the usual tertiary gray. Up shows
-   the start/center/end grid, down shows the between/around/evenly alternates. */
+/* Up/down page arrows, now in the Alignment section header (far right, 6px apart). The
+   arrow that switches pages is tinted (primary) and clickable; the current page's own
+   arrow is dimmed and inert. */
 .alignment-pager {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
+  gap: 6px;
   flex-shrink: 0;
-  width: 16px;
-  align-self: stretch;
 }
 
 .alignment-pager-arrow {
@@ -164,10 +161,11 @@
   color: var(--framer-color-text-tertiary);
 }
 
-.alignment-pager-arrow:hover {
-  color: var(--framer-color-text-secondary);
+.alignment-pager-arrow.is-active {
+  color: var(--framer-color-tint);
+  cursor: pointer;
 }
 
-.alignment-pager-arrow.is-active {
-  color: #ffffff;
+.alignment-pager-arrow:disabled {
+  cursor: default;
 }

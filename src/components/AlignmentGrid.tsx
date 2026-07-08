@@ -1,4 +1,3 @@
-import {useState} from 'react'
 import './AlignmentGrid.css'
 
 const ORDER = ['start', 'center', 'end'] as const
@@ -24,16 +23,19 @@ export type AlignmentChange = {distribution: string; alignment: string}
 interface AlignmentGridProps {
   value: AlignmentValue
   onChange: (next: AlignmentChange) => void
+  /** Which page is showing — the 3×3 start/center/end grid, or the space-* alternates.
+   *  Controlled by the parent (the pager arrows now live in the section header, not on
+   *  the grid itself). */
+  showAlternates: boolean
 }
 
 /** Framer-style combined align + distribute picker: a square 3×3 grid sets both the
  *  main-axis position (distribution) and cross-axis position (alignment) of a stack in
- *  one click. A two-dot pager on the right slides that grid up and out and a second
- *  panel in — 3 selectable representations of the space-between/around/evenly
- *  distributions the 3×3 grid can't express. */
-export function AlignmentGrid({value, onChange}: AlignmentGridProps) {
+ *  one click. The parent's header arrows slide it up and out for a second panel — 3
+ *  selectable representations of the space-between/around/evenly distributions the 3×3
+ *  grid can't express. */
+export function AlignmentGrid({value, onChange, showAlternates}: AlignmentGridProps) {
   const {direction, distribution, alignment} = value
-  const [showAlternates, setShowAlternates] = useState(false)
 
   const cellValue = (col: number, row: number) =>
     direction === 'horizontal'
@@ -90,31 +92,41 @@ export function AlignmentGrid({value, onChange}: AlignmentGridProps) {
           </div>
         </div>
       </div>
-      <div className='alignment-pager'>
-        <button
-          type='button'
-          className={showAlternates ? 'alignment-pager-arrow' : 'alignment-pager-arrow is-active'}
-          onClick={() => setShowAlternates(false)}
-          title='Start / Center / End'
-          aria-label='Show start/center/end grid'
-        >
-          <ArrowIcon direction='up' />
-        </button>
-        <button
-          type='button'
-          className={showAlternates ? 'alignment-pager-arrow is-active' : 'alignment-pager-arrow'}
-          onClick={() => setShowAlternates(true)}
-          title='Between / Around / Evenly'
-          aria-label='Show more distribute options'
-        >
-          <ArrowIcon direction='down' />
-        </button>
-      </div>
     </div>
   )
 }
 
-function ArrowIcon({direction}: {direction: 'up' | 'down'}) {
+/** Up/down pager arrows for the alignment grid's two pages — rendered in the section
+ *  header (see AlignmentZIndexRow), not on the grid. The arrow that would switch pages
+ *  is tinted (primary) and clickable; the current page's own arrow is dimmed and inert. */
+export function AlignmentPager({showAlternates, onChange}: {showAlternates: boolean; onChange: (next: boolean) => void}) {
+  return (
+    <div className='alignment-pager'>
+      <button
+        type='button'
+        className={showAlternates ? 'alignment-pager-arrow is-active' : 'alignment-pager-arrow'}
+        onClick={() => showAlternates && onChange(false)}
+        disabled={!showAlternates}
+        title='Start / Center / End'
+        aria-label='Show start/center/end grid'
+      >
+        <AlignmentArrowIcon direction='up' />
+      </button>
+      <button
+        type='button'
+        className={showAlternates ? 'alignment-pager-arrow' : 'alignment-pager-arrow is-active'}
+        onClick={() => !showAlternates && onChange(true)}
+        disabled={showAlternates}
+        title='Between / Around / Evenly'
+        aria-label='Show more distribute options'
+      >
+        <AlignmentArrowIcon direction='down' />
+      </button>
+    </div>
+  )
+}
+
+function AlignmentArrowIcon({direction}: {direction: 'up' | 'down'}) {
   return (
     <svg width='9' height='9' viewBox='0 0 9 9' fill='none'>
       <path

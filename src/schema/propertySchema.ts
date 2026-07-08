@@ -471,7 +471,7 @@ export const PROPERTY_SCHEMA: PropertyDescriptor[] = [
     guard: supportsOpacity,
   },
   {
-    key: 'radius',
+    key: 'borderRadius',
     group: 'appearance',
     label: 'Radius',
     control: 'dimension',

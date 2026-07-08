@@ -12,8 +12,8 @@ interface LengthFieldProps {
   /** Which real dimension this is — Width never offers a viewport unit (the SDK's
    *  `WidthLength` has no vw variant at all), Height offers `vh`. */
   axis: 'width' | 'height'
-  /** Min/Max constraints can only ever be px/% (width) or px/%/vh (height) — Fill and
-   *  Fit aren't valid CSS constraint values in the SDK's Width/HeightConstraint types. */
+  /** Min/Max constraints — px/% for both axes, plus vh for height (the SDK's
+   *  `HeightConstraint` = px|%|vh). Fill and Fit aren't valid constraint values. */
   constrained?: boolean
   /** The node's actual rendered pixel size — shown, disabled, in place of a real value
    *  while mode is "Fit" (which has no numeric value of its own). Only ever populated
@@ -24,8 +24,7 @@ interface LengthFieldProps {
   expandable?: boolean
   expanded?: boolean
   onToggleExpanded?: () => void
-  /** "W"/"H" shown inside the field's left edge (Width/Height only — Min/Max read via
-   *  their own heading above instead, same as pins/padding elsewhere in this app). */
+  /** "W"/"H"/"MIN"/"MAX" shown at the field's left edge. */
   leftLabel?: string
   /** Clearing the field (backspace to empty, then blur/Enter) unsets it via this
    *  callback rather than reverting — Min/Max constraints, which can genuinely be
@@ -37,17 +36,25 @@ interface LengthFieldProps {
   parentPx?: number | null
   /** The canvas viewport size along this axis (px) — used to convert to `vh`. */
   viewportPx?: number | null
+  /** Whether the node's parent is a stack (flex) layout. "Fill" (a flex ratio) only
+   *  applies inside a stack, so it's dropped from the unit options when this is
+   *  explicitly `false`. Unknown (null/undefined) keeps every option — better to allow a
+   *  unit the host will reject than to wrongly hide a valid one. */
+  parentIsStack?: boolean | null
 }
 
 const MODE_ORDER: LengthMode[] = ['px', '%', 'fit-content', 'fr', 'vh']
 const MODE_LABELS: Record<LengthMode, string> = {'%': '%', px: 'px', fr: 'fill', 'fit-content': 'fit', vh: 'vh'}
 
-function modesFor(axis: 'width' | 'height', constrained?: boolean): LengthMode[] {
-  // Min/Max only ever toggles between px and % — no fill/fit (not valid constraint
-  // values in the SDK) and no vh (deliberately kept out of the cycle to keep the
-  // constraint fields simple; an existing vh value still parses and displays).
-  if (constrained) return ['px', '%']
-  return axis === 'height' ? MODE_ORDER : MODE_ORDER.filter((mode) => mode !== 'vh')
+function modesFor(axis: 'width' | 'height', constrained: boolean | undefined, parentIsStack: boolean | null | undefined): LengthMode[] {
+  // Min/Max: px/% for both axes, plus vh for height (per the SDK's HeightConstraint).
+  // No fill/fit — not valid constraint values.
+  if (constrained) return axis === 'height' ? ['px', '%', 'vh'] : ['px', '%']
+  // Width has no viewport unit at all; height gets vh.
+  let modes = axis === 'height' ? MODE_ORDER : MODE_ORDER.filter((mode) => mode !== 'vh')
+  // Fill is a flex ratio — only valid when the parent is a stack. Hide it otherwise.
+  if (parentIsStack === false) modes = modes.filter((mode) => mode !== 'fr')
+  return modes
 }
 
 /** The amount to carry into `toMode` when the user switches units, chosen so the
@@ -85,15 +92,13 @@ function serializeLength(mode: LengthMode, amount: number | null): string {
   return `${amount ?? (mode === 'fr' ? 1 : 0)}${mode}`
 }
 
-/** Width/Height/Min/Max field matching Framer's own: a bare numeric value (read
- *  naturally as "375", with the unit conveyed by the button beside it, not appended to
- *  the text — Fill is the one exception, shown as "1fr" since that's how a flex ratio
- *  reads) plus an interactive unit button that cycles modes on a plain click, opens a
- *  picker dropdown on right-click, or on a press-and-drag opens that same dropdown in
- *  a hover-to-preview/release-to-select mode. Dragging anywhere else on the field
- *  (except the unit button and the optional expand caret) scrubs the value directly.
- *  "Fit" has no numeric value of its own, so it shows the node's actual rendered size
- *  instead, disabled rather than removed. */
+/** Width/Height/Min/Max field matching Framer's own: a left label, then the value and
+ *  the unit each in their own chip, then a trailing control (the Min/Max expand caret
+ *  for W/H, a clear ×/placeholder dot for Min/Max). The value chip is an editable,
+ *  drag-to-scrub number; the unit chip cycles modes on a tap, opens a picker on a
+ *  press-and-hold (or a drag), and converts the value so the rendered box barely moves.
+ *  "Fit" has no numeric value of its own, so the value chip shows the node's actual
+ *  rendered size instead, disabled rather than removed. */
 export function LengthField({
   value,
   onChange,
@@ -107,16 +112,13 @@ export function LengthField({
   onClear,
   parentPx,
   viewportPx,
+  parentIsStack,
 }: LengthFieldProps) {
   const parsed = parseLength(value)
   const isFit = parsed.mode === 'fit-content'
   const hasValue = parsed.amount != null
-  // Memoized so UnitButton's drag/click effect (which depends on `modes`/`onSelect`)
-  // doesn't tear down and rebuild its window listeners on every render of this field —
-  // it used to recreate a fresh array/closure every time regardless of whether the axis
-  // or the current value actually changed, and under DesignPanel's 600ms live-sync poll
-  // that meant the listeners were churning constantly, occasionally mid-gesture.
-  const modes = useMemo(() => modesFor(axis, constrained), [axis, constrained])
+  const pillRef = useRef<HTMLDivElement>(null)
+  const modes = useMemo(() => modesFor(axis, constrained, parentIsStack), [axis, constrained, parentIsStack])
 
   const setMode = useCallback(
     (mode: LengthMode) => {
@@ -133,23 +135,39 @@ export function LengthField({
     [onChange, parsed.amount, computedPx, parentPx, viewportPx],
   )
 
+  // After a unit change, focus + select the value chip's input so it's ready to overtype.
+  const focusValue = useCallback(() => {
+    const input = pillRef.current?.querySelector<HTMLInputElement>('.number-field-input')
+    if (!input || input.disabled) return
+    input.focus()
+    input.select()
+  }, [])
+
   return (
     <div className='length-field-row'>
-      <div className='length-field-pill'>
-        {/* Label + value (left, the drag surface — dims together when unset/fit); the
-            unit chip and trailing control (caret for W/H, clear ×/dot for Min/Max) sit
-            right and stay full-opacity even when the value is dimmed. */}
-        <NumberField
-          value={isFit ? (computedPx ?? null) : parsed.amount}
-          leftLabel={leftLabel}
-          disabled={isFit}
-          dim={!isFit && !hasValue}
-          onChange={(amount) => onChange(serializeLength(parsed.mode, amount))}
-          onClear={onClear}
-          unit={parsed.mode === 'fr' ? 'fr' : undefined}
-        />
+      <div className='length-field-pill' ref={pillRef}>
+        <div className='length-field-main'>
+          {leftLabel && (
+            <span className={!isFit && !hasValue ? 'length-field-label is-dim' : 'length-field-label'} onPointerDown={focusValue}>
+              {leftLabel}
+            </span>
+          )}
+          <div className='length-field-value-unit'>
+            {/* Value chip — editable + drag-to-scrub. */}
+            <NumberField
+              value={isFit ? (computedPx ?? null) : parsed.amount}
+              disabled={isFit}
+              dim={!isFit && !hasValue}
+              centered
+              hugContent
+              compact
+              onChange={(amount) => onChange(serializeLength(parsed.mode, amount))}
+              onClear={onClear}
+            />
+            <UnitButton mode={parsed.mode} modes={modes} onSelect={setMode} onAfterSelect={focusValue} />
+          </div>
+        </div>
         <div className='length-field-trailing'>
-          <UnitButton mode={parsed.mode} modes={modes} onSelect={setMode} />
           {expandable && (
             <button
               type='button'
@@ -202,57 +220,101 @@ function ExpandCaretIcon() {
   )
 }
 
+const HOLD_TO_OPEN_MS = 160
+const CYCLE_COMMIT_MS = 260
+
 interface UnitButtonProps {
   mode: LengthMode
   modes: LengthMode[]
   onSelect: (mode: LengthMode) => void
+  onAfterSelect?: () => void
 }
 
-/** The unit "button" — reads as a plain label but is a full picker: a plain click (no
- *  significant movement between press and release) cycles to the next mode; right-click
- *  opens a dropdown to pick directly; pressing and dragging opens that same dropdown and
- *  tracks which option is under the pointer, so releasing over one selects it (a radial-
- *  menu-style drag-select) — releasing over nothing just closes it without changing
- *  anything. All three gestures are handled through one pointer-down→move→up sequence
- *  rather than three independent handlers, so "was this a click or a drag" only has one
- *  source of truth (`draggedRef`). */
-function UnitButton({mode, modes, onSelect}: UnitButtonProps) {
+/** The unit chip — a tap cycles to the next mode, a press-and-hold (or a drag) opens a
+ *  picker dropdown right under the chip. Two touches of polish:
+ *  - Cycling is *debounced* (CYCLE_COMMIT_MS): rapid taps only commit the final mode, so
+ *    the value converts once (from the original size) rather than through each
+ *    intermediate unit — the box stays the same size as you spin through options.
+ *  - The dropdown opens on hold (HOLD_TO_OPEN_MS) or drag, sits directly beneath the
+ *    chip, and a drag-release picks whatever option is under the pointer. */
+function UnitButton({mode, modes, onSelect, onAfterSelect}: UnitButtonProps) {
   const [position, setPosition] = useState<{top: number; left: number} | null>(null)
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
-  const draggedRef = useRef(false)
-  // A plain ref, not state — set synchronously inside handlePointerDown so the very
-  // next native pointerup (which can arrive before React has re-rendered and run an
-  // effect) is never missed. Gating the window listeners themselves behind a
-  // state-driven mount (as this used to) loses fast clicks: state updates aren't
-  // guaranteed to flush before the browser's own pointerup fires, so a quick
-  // click-and-release could complete before the listener was even attached.
+  // Optimistic mode shown while a debounced cycle is pending (before it commits).
+  const [displayMode, setDisplayMode] = useState(mode)
+  const displayModeRef = useRef(mode)
   const pressedRef = useRef(false)
+  const draggedRef = useRef(false)
+  const openedRef = useRef(false)
   const pressStartRef = useRef({x: 0, y: 0})
+  const holdTimerRef = useRef<ReturnType<typeof setTimeout>>()
+  const cycleTimerRef = useRef<ReturnType<typeof setTimeout>>()
   const buttonRef = useRef<HTMLButtonElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
 
+  // Keep refs of the latest callbacks so the always-on pointer listeners never read a
+  // stale closure (LengthField hands in a fresh onSelect every render).
+  const onSelectRef = useRef(onSelect)
+  onSelectRef.current = onSelect
+  const onAfterSelectRef = useRef(onAfterSelect)
+  onAfterSelectRef.current = onAfterSelect
+
   const isOpen = position !== null
+
+  // Resync the optimistic display to the committed mode whenever the latter changes (or a
+  // pending cycle just landed).
+  useEffect(() => {
+    setDisplayMode(mode)
+    displayModeRef.current = mode
+  }, [mode])
 
   const openAt = () => {
     const rect = buttonRef.current?.getBoundingClientRect()
     if (!rect) return
-    setPosition({top: rect.bottom + 4, left: Math.max(8, rect.right - 120)})
+    // Directly beneath the chip, left edges aligned (kept on-screen at the left).
+    setPosition({top: rect.bottom + 4, left: Math.max(8, rect.left)})
+    openedRef.current = true
   }
   const close = () => {
     setPosition(null)
     setHoverIndex(null)
+    openedRef.current = false
+  }
+
+  const commitMode = (next: LengthMode) => {
+    onSelectRef.current(next)
+    onAfterSelectRef.current?.()
+  }
+
+  const cycleOnce = () => {
+    const current = displayModeRef.current
+    const next = modes[(modes.indexOf(current) + 1) % modes.length]
+    setDisplayMode(next)
+    displayModeRef.current = next
+    // Debounce: only the final mode of a fast tap-run is applied, so the conversion runs
+    // once against the original (still-uncommitted) value.
+    clearTimeout(cycleTimerRef.current)
+    cycleTimerRef.current = setTimeout(() => commitMode(next), CYCLE_COMMIT_MS)
   }
 
   const handlePointerDown = (event: React.PointerEvent<HTMLButtonElement>) => {
     event.preventDefault()
-    // This button now lives *inside* NumberField (as its trailing node), whose own
-    // pointerdown starts a value drag — without stopping propagation here, pressing
-    // the unit button would also begin scrubbing the value underneath it.
+    // The chip lives inside NumberField's value pill area; stop the parent's drag.
     event.stopPropagation()
     draggedRef.current = false
+    openedRef.current = false
     pressedRef.current = true
     pressStartRef.current = {x: event.clientX, y: event.clientY}
-    ;(event.currentTarget as Element).setPointerCapture?.(event.pointerId)
+    try {
+      ;(event.currentTarget as Element).setPointerCapture?.(event.pointerId)
+    } catch {
+      /* pointer already gone */
+    }
+    // Hold → open the dropdown (no drag required).
+    clearTimeout(holdTimerRef.current)
+    holdTimerRef.current = setTimeout(() => {
+      if (pressedRef.current && !openedRef.current) openAt()
+    }, HOLD_TO_OPEN_MS)
   }
 
   const handleContextMenu = (event: React.MouseEvent) => {
@@ -260,9 +322,6 @@ function UnitButton({mode, modes, onSelect}: UnitButtonProps) {
     openAt()
   }
 
-  // Always attached (mirrors NumberField's own drag listeners) — the actual pressed
-  // state lives in `pressedRef`, checked synchronously, so there's no window between
-  // pointerdown and this effect running where a pointerup could slip through unseen.
   useEffect(() => {
     const handleMove = (event: PointerEvent) => {
       if (!pressedRef.current) return
@@ -270,8 +329,10 @@ function UnitButton({mode, modes, onSelect}: UnitButtonProps) {
         const moved = Math.hypot(event.clientX - pressStartRef.current.x, event.clientY - pressStartRef.current.y)
         if (moved < DRAG_THRESHOLD_PX) return
         draggedRef.current = true
-        openAt()
+        clearTimeout(holdTimerRef.current)
+        if (!openedRef.current) openAt()
       }
+      if (!openedRef.current) return
       const el = document.elementFromPoint(event.clientX, event.clientY)
       const optionEl = el?.closest('[data-unit-index]')
       setHoverIndex(optionEl ? Number(optionEl.getAttribute('data-unit-index')) : null)
@@ -279,16 +340,21 @@ function UnitButton({mode, modes, onSelect}: UnitButtonProps) {
     const handleUp = () => {
       if (!pressedRef.current) return
       pressedRef.current = false
-      if (draggedRef.current) {
-        // Drag-release: select whatever's currently hovered, or just close if the
-        // pointer was released outside every option.
-        if (hoverIndex != null && modes[hoverIndex]) onSelect(modes[hoverIndex])
-        draggedRef.current = false
-        close()
+      clearTimeout(holdTimerRef.current)
+      if (openedRef.current) {
+        // Dropdown is open: a release over an option picks it; a drag that ends off any
+        // option closes; a plain hold-open (no drag) stays open for a follow-up click.
+        if (hoverIndex != null && modes[hoverIndex]) {
+          commitMode(modes[hoverIndex])
+          close()
+        } else if (draggedRef.current) {
+          close()
+        }
       } else {
-        const index = modes.indexOf(mode)
-        onSelect(modes[(index + 1) % modes.length])
+        // Quick tap → cycle (debounced).
+        cycleOnce()
       }
+      draggedRef.current = false
     }
     window.addEventListener('pointermove', handleMove)
     window.addEventListener('pointerup', handleUp)
@@ -296,12 +362,20 @@ function UnitButton({mode, modes, onSelect}: UnitButtonProps) {
       window.removeEventListener('pointermove', handleMove)
       window.removeEventListener('pointerup', handleUp)
     }
-  }, [hoverIndex, modes, mode, onSelect])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hoverIndex, modes])
 
-  // The right-click-opened dropdown (no drag involved) closes on an outside click/Escape
-  // instead — a plain click-to-select path, distinct from the drag-release path above.
+  useEffect(
+    () => () => {
+      clearTimeout(holdTimerRef.current)
+      clearTimeout(cycleTimerRef.current)
+    },
+    [],
+  )
+
+  // Outside click / Escape closes the dropdown.
   useEffect(() => {
-    if (!isOpen || draggedRef.current) return
+    if (!isOpen) return
     const handleOutside = (event: MouseEvent) => {
       const target = event.target as Node
       if (listRef.current?.contains(target) || buttonRef.current?.contains(target)) return
@@ -327,7 +401,7 @@ function UnitButton({mode, modes, onSelect}: UnitButtonProps) {
         onPointerDown={handlePointerDown}
         onContextMenu={handleContextMenu}
       >
-        <span className='length-field-unit-label'>{MODE_LABELS[mode]}</span>
+        <span className='length-field-unit-label'>{MODE_LABELS[displayMode]}</span>
       </button>
       {position &&
         createPortal(
@@ -338,14 +412,14 @@ function UnitButton({mode, modes, onSelect}: UnitButtonProps) {
                 type='button'
                 data-unit-index={index}
                 className={
-                  option === mode
+                  option === displayMode
                     ? 'length-field-unit-option is-active'
                     : index === hoverIndex
                       ? 'length-field-unit-option is-hovered'
                       : 'length-field-unit-option'
                 }
                 onClick={() => {
-                  onSelect(option)
+                  commitMode(option)
                   close()
                 }}
               >

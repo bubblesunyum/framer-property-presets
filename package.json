@@ -8,7 +8,8 @@
         "build": "tsc -b && vite build",
         "check-typescript": "tsc -b --noEmit",
         "preview": "vite preview",
-        "test": "vitest run"
+        "test": "vitest run",
+        "pack": "npm run build && rm -f plugin.zip && cd dist && zip -qr ../plugin.zip . && cd .. && echo \"Created plugin.zip ($(du -h plugin.zip | cut -f1))\""
     },
     "dependencies": {
         "framer-plugin": "3.10.3",
