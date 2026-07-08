@@ -43,18 +43,20 @@ function Section({
   children: ReactNode
 }) {
   return (
-    <section className='property-section'>
+    <>
+      <section className='property-section'>
+        <div className='property-section-header'>
+          <h3 className='property-section-heading'>{title}</h3>
+          {headerAction}
+        </div>
+        {isEmpty ? (
+          <p className='property-section-empty'>This layer doesn't support {title.toLowerCase()} properties.</p>
+        ) : (
+          children
+        )}
+      </section>
       <div className='framer-divider' />
-      <div className='property-section-header'>
-        <h3 className='property-section-heading'>{title}</h3>
-        {headerAction}
-      </div>
-      {isEmpty ? (
-        <p className='property-section-empty'>This layer doesn't support {title.toLowerCase()} properties.</p>
-      ) : (
-        children
-      )}
-    </section>
+    </>
   )
 }
 
@@ -229,15 +231,31 @@ function SizeAxes({
       {(widthOpen || heightOpen) && (
         <div className='size-axes'>
           <div className='size-axis-minmax'>
-            {widthOpen && minWidth && <MinMaxField label='MIN' field={minWidth} axis='width' parentPx={parentWidthPx} />}
-            {widthOpen && maxWidth && <MinMaxField label='MAX' field={maxWidth} axis='width' parentPx={parentWidthPx} />}
+            {widthOpen && minWidth && (
+              <MinMaxField label='MIN' field={minWidth} axis='width' parentPx={parentWidthPx} />
+            )}
+            {widthOpen && maxWidth && (
+              <MinMaxField label='MAX' field={maxWidth} axis='width' parentPx={parentWidthPx} />
+            )}
           </div>
           <div className='size-axis-minmax'>
             {heightOpen && minHeight && (
-              <MinMaxField label='MIN' field={minHeight} axis='height' parentPx={parentHeightPx} viewportPx={viewportHeightPx} />
+              <MinMaxField
+                label='MIN'
+                field={minHeight}
+                axis='height'
+                parentPx={parentHeightPx}
+                viewportPx={viewportHeightPx}
+              />
             )}
             {heightOpen && maxHeight && (
-              <MinMaxField label='MAX' field={maxHeight} axis='height' parentPx={parentHeightPx} viewportPx={viewportHeightPx} />
+              <MinMaxField
+                label='MAX'
+                field={maxHeight}
+                axis='height'
+                parentPx={parentHeightPx}
+                viewportPx={viewportHeightPx}
+              />
             )}
           </div>
         </div>

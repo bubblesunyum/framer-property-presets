@@ -122,7 +122,12 @@ export function LengthField({
     (mode: LengthMode) => {
       // Convert rather than reset, so switching units barely moves the rendered box
       // (see convertedAmount) — Fill is the lone exception, always 1.
-      const amount = convertedAmount(mode, {currentAmount: parsed.amount, renderedPx: computedPx ?? null, parentPx, viewportPx})
+      const amount = convertedAmount(mode, {
+        currentAmount: parsed.amount,
+        renderedPx: computedPx ?? null,
+        parentPx,
+        viewportPx,
+      })
       onChange(serializeLength(mode, amount))
     },
     [onChange, parsed.amount, computedPx, parentPx, viewportPx],
@@ -141,6 +146,7 @@ export function LengthField({
           dim={!isFit && !hasValue}
           onChange={(amount) => onChange(serializeLength(parsed.mode, amount))}
           onClear={onClear}
+          unit={parsed.mode === 'fr' ? 'fr' : undefined}
         />
         <div className='length-field-trailing'>
           <UnitButton mode={parsed.mode} modes={modes} onSelect={setMode} />
@@ -170,7 +176,9 @@ export function LengthField({
             ) : (
               // Unset: a small inert dot in place of the clear button (matches the
               // reference — the field reads as "empty, tap to set" rather than "clearable").
-              <span className='length-field-dot' aria-hidden='true' />
+              <div className='length-field-dot-area'>
+                <span className='length-field-dot' aria-hidden='true' />
+              </div>
             ))}
         </div>
       </div>

@@ -1,57 +1,57 @@
 /* Shared row grid — label column + control column, the pattern Framer's own team
    uses for property rows (adapted from the official "tidyup" example plugin). */
 .row {
-    display: grid;
-    grid-template-columns: 88px 1fr;
-    align-items: center;
-    width: 100%;
-    gap: 8px;
-    min-height: 32px;
+  display: grid;
+  grid-template-columns: 88px 1fr;
+  align-items: center;
+  width: 100%;
+  gap: 8px;
+  min-height: 32px;
 }
 
 .property-row {
-    padding: 0 15px;
-    opacity: 0.5;
-    transition: opacity 0.15s;
+  padding: 0 15px;
+  opacity: 0.5;
+  transition: opacity 0.15s;
 }
 
 .property-row.is-included {
-    opacity: 1;
+  opacity: 1;
 }
 
 /* Top-aligned variant (padding): keep the label pinned level with the first control
    row instead of centering in a growing row. */
 .property-row.is-top {
-    align-items: start;
+  align-items: start;
 }
 
 .property-row.is-top .property-row-label {
-    height: 32px;
-    display: flex;
-    align-items: center;
+  height: 32px;
+  display: flex;
+  align-items: center;
 }
 
 .property-row-label {
-    color: var(--framer-color-text-secondary);
-    font-size: 12px;
+  color: var(--framer-color-text-secondary);
+  font-size: 11px;
 }
 
 .property-row-label.is-toggleable,
 .mini-field-label.is-toggleable {
-    cursor: pointer;
-    user-select: none;
+  cursor: pointer;
+  user-select: none;
 }
 
 .property-row-label.is-toggleable:hover,
 .mini-field-label.is-toggleable:hover {
-    color: var(--framer-color-text);
+  color: var(--framer-color-text);
 }
 
 .property-row-control {
-    display: flex;
-    align-items: center;
-    min-width: 0;
-    width: 100%;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  width: 100%;
 }
 
 /* Child (not descendant) combinator deliberately — LengthField/NumberField/etc.
@@ -59,66 +59,66 @@
    stretch a control that's rendered bare, directly inside this container. */
 .property-row-control > select,
 .property-row-control > input {
-    width: 100%;
+  width: 100%;
 }
 
-.property-row-control > input[type="checkbox"] {
-    /* Not `auto` — that's higher-specificity than framer.css's own `12px`, which is
+.property-row-control > input[type='checkbox'] {
+  /* Not `auto` — that's higher-specificity than framer.css's own `12px`, which is
        what actually draws the box (appearance:none has no intrinsic replaced size). */
-    width: 12px;
-    flex-shrink: 0;
+  width: 12px;
+  flex-shrink: 0;
 }
 
 .mini-field-pair {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    padding: 0 15px;
-    min-height: 30px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 0 15px;
+  min-height: 30px;
 }
 
 .mini-field-column {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
 }
 
 .mini-field {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    min-width: 0;
-    opacity: 0.5;
-    transition: opacity 0.15s;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  opacity: 0.5;
+  transition: opacity 0.15s;
 }
 
 .mini-field.is-included {
-    opacity: 1;
+  opacity: 1;
 }
 
 .mini-field-label {
-    font-size: 11px;
-    color: var(--framer-color-text-secondary);
+  font-size: 11px;
+  color: var(--framer-color-text-secondary);
 }
 
 .mini-field > select,
 .mini-field > input {
-    width: 100%;
+  width: 100%;
 }
 
-.mini-field > input[type="checkbox"] {
-    /* Not `auto` — that's higher-specificity than framer.css's own `12px`, which is
+.mini-field > input[type='checkbox'] {
+  /* Not `auto` — that's higher-specificity than framer.css's own `12px`, which is
        what actually draws the box (appearance:none has no intrinsic replaced size). */
-    width: 12px;
-    flex-shrink: 0;
+  width: 12px;
+  flex-shrink: 0;
 }
 
 .control-only {
-    opacity: 0.5;
-    transition: opacity 0.15s;
+  opacity: 0.5;
+  transition: opacity 0.15s;
 }
 
 .control-only.is-included {
-    opacity: 1;
+  opacity: 1;
 }

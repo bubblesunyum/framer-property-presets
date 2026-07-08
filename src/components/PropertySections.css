@@ -6,10 +6,10 @@
   overflow-y: auto;
   /* No top padding — the sticky preset row above already carries the (small) gap
        down to the first section's divider. */
-  padding: 0 0 15px;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  /* gap: 4px; */
 }
 
 .property-section {
@@ -17,8 +17,8 @@
   flex-direction: column;
   /* 16px between each row of items in a section (position control, pin grid, dimensions,
        flow, gap/padding, alignment+z-index). */
-  gap: 16px;
-  padding: 16px 0;
+  gap: 8px;
+  padding: 12px 0 16px;
 }
 
 .property-section-header {
@@ -27,13 +27,14 @@
   justify-content: space-between;
   gap: 8px;
   padding: 0 15px;
-  margin-bottom: 2px;
 }
 
 .property-section-heading {
   font-size: 12px;
   font-weight: 600;
   color: var(--framer-color-text);
+  margin: 0;
+  padding: 0;
 }
 
 .appearance-visibility-toggle {
@@ -82,7 +83,7 @@
 
 .property-fullwidth-label {
   margin: 0 0 6px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 400;
   color: var(--framer-color-text-secondary);
 }
@@ -144,21 +145,21 @@
 .alignment-zindex-row {
   display: flex;
   align-items: stretch;
-  gap: 14px;
+  gap: 16px;
   padding: 0 15px;
 }
 
 .alignment-block {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  /* gap: 4px; */
   transition: opacity 0.15s;
 }
 
 .zindex-block {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  /* gap: 4px; */
   flex-shrink: 0;
   width: 56px;
   transition: opacity 0.15s;
@@ -215,7 +216,7 @@
 
 .dimensions-header-title {
   margin: 0;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 400;
   color: var(--framer-color-text-secondary);
 }
@@ -251,7 +252,7 @@
 .size-axis {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -271,4 +272,10 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  padding-top: 2px;
+}
+
+.property-section .framer-divider {
+  padding: 0;
+  margin: 0;
 }

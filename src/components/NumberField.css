@@ -114,10 +114,9 @@
        reads as an ugly gap once the unit sits right after it. Pulling the unit back by
        the same 6px cancels that buffer visually without touching the buffer itself (so
        editing safety is unaffected), landing the unit flush against the digit. */
-  margin-left: -6px;
   font-size: 11px;
   /* A bit brighter than the field's other dim text so the unit stays legible next to
        the value instead of fading into the background. */
-  color: var(--framer-color-text-secondary);
+  color: var(--framer-color-text-primary);
   pointer-events: none;
 }

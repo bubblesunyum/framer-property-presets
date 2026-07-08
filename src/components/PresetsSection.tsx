@@ -41,12 +41,12 @@ export function PresetsSection({
 
   return (
     <div className={expanded ? 'presets-section is-expanded' : 'presets-section'}>
-      <div className='presets-header'>
+      <div className='presets-header' onClick={() => setExpanded((e) => !e)}>
         <h3 className='presets-header-title'>Presets</h3>
         <button
           type='button'
           className={expanded ? 'presets-caret is-expanded' : 'presets-caret'}
-          onClick={() => setExpanded((prev) => !prev)}
+          // onClick={() => setExpanded((prev) => !prev)}
           aria-expanded={expanded}
           aria-label={expanded ? 'Collapse presets' : 'Expand presets'}
         >
@@ -111,7 +111,13 @@ export function PresetsSection({
 function CaretDownIcon() {
   return (
     <svg width='9' height='9' viewBox='0 0 9 9' fill='none'>
-      <path d='M2 3.5l2.5 2.5 2.5-2.5' stroke='currentColor' strokeWidth='1.3' strokeLinecap='round' strokeLinejoin='round' />
+      <path
+        d='M2 3.5l2.5 2.5 2.5-2.5'
+        stroke='currentColor'
+        strokeWidth='1.3'
+        strokeLinecap='round'
+        strokeLinejoin='round'
+      />
     </svg>
   )
 }

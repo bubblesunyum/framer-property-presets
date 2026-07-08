@@ -12,10 +12,10 @@
   gap: 8px;
   flex: 1;
   min-width: 0;
-  min-height: 32px;
+  height: 32px;
   padding: 6px;
   background: var(--framer-color-bg-tertiary);
-  border-radius: 4px;
+  border-radius: 8px;
 }
 
 /* The value NumberField fills the middle (left-aligned), so the trailing group is
@@ -120,7 +120,9 @@
 /* Min/Max expand caret (Width/Height only) — a plain 20px square with the chevron,
    flipping when the min/max section is open. */
 .length-field-expand,
-.length-field-clear {
+.length-field-clear,
+.length-field-dot-area,
+.length-field-expand:focus {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -144,6 +146,10 @@
 
 .length-field-expand.is-expanded svg {
   transform: rotate(180deg);
+}
+
+.length-field-expand.is-expanded {
+  background: var(--framer-color-bg-secondary);
 }
 
 /* Small inert dot shown in the trailing slot when a Min/Max field is unset (in place of

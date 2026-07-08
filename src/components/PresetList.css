@@ -1,53 +1,54 @@
 .preset-list {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
 }
 
 .preset-new-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
 .preset-new-tooltip {
-    width: 100%;
+  width: 100%;
 }
 
 .preset-list-body {
-    flex: 1;
-    overflow-y: auto;
-    /* Bottom padding clears the sticky footer so the last row is never hidden. */
-    padding: 12px 15px 76px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
+  flex: 1;
+  overflow-y: auto;
+  /* Bottom padding clears the sticky footer so the last row is never hidden. */
+  padding: 12px 15px 76px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .preset-list-empty {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 24px;
-    color: var(--framer-color-text-tertiary);
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
+  color: var(--framer-color-text-tertiary);
 }
 
 /* Floats over the bottom of the scrolling list. The container itself is click-through
    (so the faded area doesn't eat scroll/clicks) — only the button inside it is not. */
 .preset-list-footer {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    padding: 14px 15px 15px;
-    background: linear-gradient(to top, var(--framer-color-bg) 55%, transparent);
-    pointer-events: none;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 14px 15px 15px;
+  background: linear-gradient(to top, var(--framer-color-bg) 55%, transparent);
+  pointer-events: none;
 }
 
 .preset-list-footer > * {
-    pointer-events: auto;
+  pointer-events: auto;
 }

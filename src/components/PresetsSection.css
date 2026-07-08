@@ -1,169 +1,173 @@
 .presets-section {
-    position: relative;
-    flex-shrink: 0;
-    z-index: 10;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 8px 16px 12px;
-    background: var(--framer-color-bg);
-    border-bottom: 1px solid var(--framer-color-divider);
+  position: relative;
+  flex-shrink: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--framer-color-bg);
+  border-bottom: 1px solid var(--framer-color-divider);
 }
 
 .presets-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 16px;
+  cursor: pointer;
 }
 
 .presets-header-title {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--framer-color-text);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--framer-color-text);
 }
 
 /* Caret: no background pointing down (collapsed); flips 180° and gains the selected
    surface when the list is open. */
 .presets-caret {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 19px;
-    height: 19px;
-    flex-shrink: 0;
-    padding: 0;
-    background: none;
-    color: var(--framer-color-text-secondary);
-    border-radius: 108px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 19px;
+  height: 19px;
+  flex-shrink: 0;
+  padding: 0;
+  background: none !important;
+  color: var(--framer-color-text-secondary);
+  border-radius: 4px;
+  padding-right: 6px;
 }
 
 .presets-caret:hover {
-    color: var(--framer-color-text);
+  color: var(--framer-color-text);
 }
 
 .presets-caret svg {
-    transition: transform 0.25s ease;
+  transition: transform 0.25s ease;
 }
 
 .presets-caret.is-expanded {
-    background: var(--control-selected-bg);
-    color: var(--framer-color-text);
+  background: var(--control-selected-bg);
+  color: var(--framer-color-text);
 }
 
 .presets-caret.is-expanded svg {
-    transform: rotate(180deg);
+  transform: rotate(180deg);
 }
 
 /* Wraps the pill strip + the expand overlay; the overlay is absolute from this box's
    top, so opening it covers the strip without changing the section's flow height. */
 .presets-body {
-    position: relative;
-    width: 100%;
-    min-width: 0;
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  padding: 0 16px 12px;
 }
 
 /* Horizontal scrolling pill strip with a pinned "+" at the right. */
 .presets-collapsed {
-    position: relative;
-    display: flex;
-    width: 100%;
-    min-width: 0;
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-width: 0;
 }
 
 .presets-pills {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    overflow-x: auto;
-    width: 100%;
-    min-width: 0;
-    /* Room so the last pill can scroll clear of the pinned "+" and its fade. */
-    padding-right: 48px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  width: 100%;
+  min-width: 0;
+  /* Room so the last pill can scroll clear of the pinned "+" and its fade. */
+  padding-right: 48px;
 }
 
 .preset-pill {
-    flex-shrink: 0;
-    /* framer.css's generic `button` rule forces an explicit width — override it so each
+  flex-shrink: 0;
+  /* framer.css's generic `button` rule forces an explicit width — override it so each
        pill hugs its own label instead (see the recurring width trap across this app). */
-    width: auto;
-    height: auto;
-    padding: 6px 8px;
-    background: var(--framer-color-bg-tertiary);
-    color: var(--framer-color-text-secondary);
-    border-radius: 4px;
-    font-size: 11px;
-    font-weight: 400;
-    letter-spacing: 0.11px;
-    white-space: nowrap;
-    cursor: pointer;
+  width: auto;
+  height: auto;
+  padding: 6px 8px;
+  background: var(--framer-color-bg-tertiary);
+  color: var(--framer-color-text-secondary);
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.11px;
+  white-space: nowrap;
+  cursor: pointer;
 }
 
 .preset-pill:hover {
-    color: var(--framer-color-text);
+  color: var(--framer-color-text);
 }
 
 /* Pinned add button + the fade to its left, sitting over the scrolling strip. */
 .presets-fade {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    right: 28px;
-    width: 28px;
-    pointer-events: none;
-    background: linear-gradient(to right, transparent, var(--framer-color-bg));
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 28px;
+  width: 28px;
+  pointer-events: none;
+  background: linear-gradient(to right, transparent, var(--framer-color-bg));
 }
 
 .preset-pill-add {
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 28px;
-    min-width: 28px;
-    height: 100%;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--framer-color-bg);
-    border: 1px dashed var(--framer-color-bg-tertiary);
-    color: var(--framer-color-text-secondary);
-    font-size: 13px;
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 28px;
+  min-width: 28px;
+  height: 100%;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--framer-color-bg);
+  border: 1px dashed var(--framer-color-bg-tertiary);
+  color: var(--framer-color-text-secondary);
+  font-size: 13px;
 }
 
 .preset-pill-add:hover:not(:disabled) {
-    border-color: var(--framer-color-text-tertiary);
-    color: var(--framer-color-text);
+  border-color: var(--framer-color-text-tertiary);
+  color: var(--framer-color-text);
 }
 
 .preset-pill-add:disabled {
-    opacity: 0.4;
-    cursor: default;
+  opacity: 0.4;
+  cursor: default;
 }
 
 /* The expanded list grows down over the panels below (absolute, so nothing beneath it
    moves). max-height animates it open; overflow hidden clips it while collapsed. */
 .presets-overlay {
-    position: absolute;
-    /* From the pill strip's top edge (this box's top) — so it covers the strip and then
+  position: absolute;
+  /* From the pill strip's top edge (this box's top) — so it covers the strip and then
        grows on down over the panels below. -12px pulls up over the section's own bottom
        padding so the covered strip doesn't peek out beneath the header. */
-    top: -4px;
-    left: 0;
-    right: 0;
-    overflow: hidden;
-    max-height: 0;
-    background: var(--framer-color-bg);
-    transition: max-height 0.28s ease;
+  top: -4px;
+  left: 0;
+  right: 0;
+  overflow: hidden;
+  width: 100%;
+  max-height: 0;
+  background: var(--framer-color-bg);
+  transition: max-height 0.28s ease;
 }
 
 .presets-section.is-expanded .presets-overlay {
-    /* Enough to cover the panel area; PresetList scrolls internally past this. */
-    max-height: calc(100vh - 60px);
-    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.4);
+  /* Enough to cover the panel area; PresetList scrolls internally past this. */
+  max-height: calc(100vh - 60px);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.4);
 }
 
 /* Give the reused PresetList a concrete height to fill inside the overlay. */
 .presets-overlay .preset-list {
-    height: calc(100vh - 60px);
+  height: calc(100vh - 60px);
 }
