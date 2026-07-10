@@ -48,13 +48,16 @@ function ExpandIcon() {
     )
 }
 
-/** Radius editor mirroring PaddingField: collapsed to a single value by default,
- *  expandable to four independent corners via the toggle button. Starts expanded if
- *  the incoming value already has asymmetric corners (e.g. a preset captured from a
- *  node with per-corner radius), collapsed otherwise. */
+/** Radius editor mirroring PaddingField's expand behavior, but the all-corner field
+ *  and its toggle button stay put — expanding reveals the four corner fields in a row
+ *  underneath rather than replacing the main field, so the button doesn't jump. Starts
+ *  expanded if the incoming value already has asymmetric corners (e.g. a preset
+ *  captured from a node with per-corner radius), collapsed otherwise; toggling only
+ *  shows/hides the breakdown row and never itself changes the value. */
 export function RadiusField({ value, onChange, onClear }: RadiusFieldProps) {
     const corners = parseRadius(value)
-    const [expanded, setExpanded] = useState(() => value != null && !isUniform(corners))
+    const uniform = isUniform(corners)
+    const [expanded, setExpanded] = useState(() => value != null && !uniform)
 
     const setCorner = (key: keyof Corners, next: number) => {
         onChange(serializeRadius({ ...corners, [key]: next }))
@@ -62,33 +65,34 @@ export function RadiusField({ value, onChange, onClear }: RadiusFieldProps) {
 
     return (
         <div className="radius-field">
-            {expanded ? (
+            <div className="radius-field-main">
+                <NumberField
+                    value={value == null || !uniform ? null : corners.topLeft}
+                    unit="px"
+                    compact
+                    dim={value == null || !uniform}
+                    dragSensitivity={0.4}
+                    onChange={(next) => onChange(`${next}px`)}
+                    onClear={onClear}
+                />
+                <button
+                    type="button"
+                    className={expanded ? "radius-field-toggle is-active" : "radius-field-toggle"}
+                    onClick={() => setExpanded((prev) => !prev)}
+                    aria-label={expanded ? "Hide individual corners" : "Edit each corner individually"}
+                    title={expanded ? "Hide individual corners" : "Edit each corner individually"}
+                >
+                    <ExpandIcon />
+                </button>
+            </div>
+            {expanded && (
                 <div className="radius-field-corners">
                     <NumberField value={corners.topLeft} leftLabel="TL" unit="px" onChange={(next) => setCorner("topLeft", next)} />
                     <NumberField value={corners.topRight} leftLabel="TR" unit="px" onChange={(next) => setCorner("topRight", next)} />
                     <NumberField value={corners.bottomLeft} leftLabel="BL" unit="px" onChange={(next) => setCorner("bottomLeft", next)} />
                     <NumberField value={corners.bottomRight} leftLabel="BR" unit="px" onChange={(next) => setCorner("bottomRight", next)} />
                 </div>
-            ) : (
-                <NumberField
-                    value={value == null ? null : corners.topLeft}
-                    unit="px"
-                    compact
-                    dim={value == null}
-                    dragSensitivity={0.4}
-                    onChange={(next) => onChange(`${next}px`)}
-                    onClear={onClear}
-                />
             )}
-            <button
-                type="button"
-                className={expanded ? "radius-field-toggle is-active" : "radius-field-toggle"}
-                onClick={() => setExpanded((prev) => !prev)}
-                aria-label={expanded ? "Use one radius for all corners" : "Edit each corner individually"}
-                title={expanded ? "Use one radius for all corners" : "Edit each corner individually"}
-            >
-                <ExpandIcon />
-            </button>
         </div>
     )
 }
