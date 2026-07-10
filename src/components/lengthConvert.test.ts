@@ -12,6 +12,10 @@ describe('convertedAmount', () => {
     expect(convertedAmount('fit-content', {currentAmount: 375, ...ctx})).toBeNull()
   })
 
+  it('switching to fit-image has no numeric value', () => {
+    expect(convertedAmount('fit-image', {currentAmount: 375, ...ctx})).toBeNull()
+  })
+
   it('switching to px keeps the rendered pixel size', () => {
     expect(convertedAmount('px', {currentAmount: 50, ...ctx})).toBe(180)
   })

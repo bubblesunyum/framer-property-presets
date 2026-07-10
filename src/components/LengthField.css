@@ -64,6 +64,12 @@
   border-radius: 4px;
 }
 
+/* Darker "pressed" surface while the value is being edited (focused) — matches the unit
+   button's open state below, so the two chips read consistently. */
+.length-field-value-unit .number-field:focus-within {
+  background: var(--control-pressed-bg);
+}
+
 .length-field-value-unit .number-field .number-field-input {
   font-size: 11px;
   text-align: center;
@@ -93,6 +99,12 @@
   line-height: 1.1;
   letter-spacing: 0.11px;
   cursor: pointer;
+}
+
+/* Pressed/open look while the unit menu is showing — a step darker than the resting
+   selected surface, matching the focused value chip. */
+.length-field-unit-button.is-open {
+  background: var(--control-pressed-bg);
 }
 
 .length-field-unit-list {
@@ -135,6 +147,7 @@
 /* Trailing control (Min/Max caret, or clear ×/placeholder dot) — a 20px box on the
    app's own backdrop color, so it reads as sunken next to the raised value/unit chips. */
 .length-field-expand,
+.length-field-expand:focus,
 .length-field-clear,
 .length-field-dot-area {
   display: flex;
@@ -144,9 +157,13 @@
   height: 20px;
   flex-shrink: 0;
   padding: 0;
-  background: var(--framer-color-bg);
+  background: transparent;
   color: var(--framer-color-text-tertiary);
   border-radius: 4px;
+}
+
+.length-field-expand.is-expanded {
+  background: var(--framer-color-bg);
 }
 
 .length-field-expand:hover,

@@ -1,6 +1,7 @@
 import { useIsAllowedTo, type CanvasNode } from "framer-plugin"
 import { useEffect, useRef, useState } from "react"
 import { applyPresetToSelection } from "../canvas/applyPreset"
+import { notify } from "../lib/notify"
 import { canFitInSynced, deletePreset, movePreset } from "../storage/presetRepository"
 import type { Preset } from "../types/preset"
 import { type MenuEntry, PresetMenu } from "./PresetMenu"
@@ -75,7 +76,22 @@ export function PresetListItem({ preset, selection, refreshToken, onMoved, onDel
     const handleApply = async () => {
         if (applyDisabled) return
         const outcome = await applyPresetToSelection(preset, selection)
+        const failedCount = outcome.failedNodes.length
         setStatus(outcome.appliedCount > 0 ? "applied" : "failed")
+
+        // Give clear feedback beyond the small inline pill — especially when only some of
+        // the selected layers took the preset, which the pill alone can't convey.
+        if (outcome.appliedCount === 0) {
+            notify(
+                failedCount > 0
+                    ? "Couldn't apply the preset. The layer may be locked or protected."
+                    : "This preset doesn't apply to the selected layer.",
+                "error"
+            )
+        } else if (failedCount > 0) {
+            notify(`Applied to ${outcome.appliedCount} of ${selection.length} layers.`, "warning")
+        }
+
         window.clearTimeout(statusTimeout.current)
         statusTimeout.current = window.setTimeout(() => setStatus("idle"), 1400)
     }

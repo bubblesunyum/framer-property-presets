@@ -52,13 +52,19 @@ export function PresetMenu({ items, onOpenChange }: PresetMenuProps) {
 
     useEffect(() => {
         if (!isOpen) return
+        // Move focus into the menu when it opens so keyboard users land on an actionable
+        // item (and can then arrow between them / Escape back out).
+        menuRef.current?.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus()
         const handlePointerDown = (event: MouseEvent) => {
             const target = event.target as Node
             if (menuRef.current?.contains(target) || buttonRef.current?.contains(target)) return
             setOpen(false)
         }
         const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key === "Escape") setOpen(false)
+            if (event.key === "Escape") {
+                setOpen(false)
+                buttonRef.current?.focus()
+            }
         }
         window.addEventListener("mousedown", handlePointerDown)
         window.addEventListener("keydown", handleKeyDown)
@@ -69,6 +75,18 @@ export function PresetMenu({ items, onOpenChange }: PresetMenuProps) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen])
 
+    // Roving focus between menu items with the arrow keys.
+    const handleMenuKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+        if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return
+        event.preventDefault()
+        const items = Array.from(menuRef.current?.querySelectorAll<HTMLButtonElement>("button:not(:disabled)") ?? [])
+        if (items.length === 0) return
+        const currentIndex = items.indexOf(document.activeElement as HTMLButtonElement)
+        const delta = event.key === "ArrowDown" ? 1 : -1
+        const nextIndex = (currentIndex + delta + items.length) % items.length
+        items[nextIndex]?.focus()
+    }
+
     return (
         <>
             <button
@@ -76,6 +94,8 @@ export function PresetMenu({ items, onOpenChange }: PresetMenuProps) {
                 ref={buttonRef}
                 className="preset-menu-trigger"
                 aria-label="More options"
+                aria-haspopup="menu"
+                aria-expanded={isOpen}
                 onClick={(event) => {
                     event.stopPropagation()
                     setOpen(!isOpen)
@@ -88,8 +108,10 @@ export function PresetMenu({ items, onOpenChange }: PresetMenuProps) {
                     <div
                         ref={menuRef}
                         className="preset-menu"
+                        role="menu"
                         style={{ top: position.top, right: position.right }}
                         onClick={(event) => event.stopPropagation()}
+                        onKeyDown={handleMenuKeyDown}
                     >
                         {items.map((item, index) =>
                             item === "separator" ? (
@@ -98,6 +120,7 @@ export function PresetMenu({ items, onOpenChange }: PresetMenuProps) {
                                 <button
                                     key={item.key}
                                     type="button"
+                                    role="menuitem"
                                     className={item.danger ? "preset-menu-item is-danger" : "preset-menu-item"}
                                     disabled={item.disabled}
                                     title={item.disabled ? item.disabledReason : undefined}

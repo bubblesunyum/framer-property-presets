@@ -74,4 +74,9 @@ export const framer = {
     setPluginData: async () => {},
     getPluginDataKeys: async () => [] as string[],
     isAllowedTo: () => true,
+    subscribeToIsAllowedTo: (..._args: unknown[]) => () => {},
+    notify: (message: string, _options?: {variant?: string}) => {
+        console.log("[preview] notify", message)
+        return {close: () => {}}
+    },
 }

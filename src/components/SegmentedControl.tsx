@@ -247,6 +247,8 @@ export function SegmentedControl({ value, onChange, options, iconSet }: Segmente
                         role="radio"
                         aria-checked={isActive}
                         aria-disabled={option.disabled}
+                        aria-label={option.label}
+                        tabIndex={option.disabled ? -1 : undefined}
                         title={option.label}
                         className={classes.join(" ")}
                         onClick={() => !option.disabled && onChange(option.value)}

@@ -10,6 +10,15 @@ const SPACE_LABELS: Record<(typeof SPACE_OPTIONS)[number], string> = {
   'space-evenly': 'evenly',
 }
 
+// Plain positional names for the 3×3 cells, so a screen reader announces something
+// meaningful for buttons whose only visible content is a dot.
+const ROW_NAMES = ['top', 'middle', 'bottom']
+const COL_NAMES = ['left', 'center', 'right']
+function cellLabel(col: number, row: number): string {
+  if (col === 1 && row === 1) return 'Align center'
+  return `Align ${ROW_NAMES[row]} ${COL_NAMES[col]}`
+}
+
 /** Value the combined align + distribute grid reads: the two stack keys it writes, plus
  *  the stack direction it needs to know which grid axis maps to which key. */
 export interface AlignmentValue {
@@ -66,6 +75,8 @@ export function AlignmentGrid({value, onChange, showAlternates}: AlignmentGridPr
                   type='button'
                   role='gridcell'
                   aria-selected={isSelected}
+                  aria-label={cellLabel(col, row)}
+                  title={cellLabel(col, row)}
                   className={isSelected ? 'alignment-cell is-selected' : 'alignment-cell'}
                   onClick={() => onChange(cellValue(col, row))}
                 >

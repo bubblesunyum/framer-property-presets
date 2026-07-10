@@ -62,12 +62,6 @@
   color: var(--framer-color-text);
 }
 
-.property-section-empty {
-  color: var(--framer-color-text-tertiary);
-  font-size: 11px;
-  padding: 0 15px;
-}
-
 /* Full-width control, no label column — either bare (Position) or with a small heading
    above it (Flow, Alignment — see .property-fullwidth-label), extending all the way to
    the section's left edge either way. */
@@ -153,6 +147,11 @@
   display: flex;
   flex-direction: column;
   /* gap: 4px; */
+  /* Take the room left beside the fixed 56px elevation block and allow shrinking, so the
+     alignment grid never overflows its column into the elevation number field on a narrow
+     panel. */
+  flex: 1;
+  min-width: 0;
   transition: opacity 0.15s;
 }
 

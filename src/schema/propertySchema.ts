@@ -40,6 +40,11 @@ interface BaseDescriptor {
    *  skip it when building a `setAttributes` payload, since sending an unrecognized key
    *  to the real SDK is unverified territory. Revisit if a future SDK version adds one. */
   synthetic?: boolean
+  /** Kept in the schema (so the data model and any presets that already reference it are
+   *  untouched) but not shown in the editor/Design panel — `buildFieldProps` returns null
+   *  for it. Used to shelve the synthetic-only controls (Squircle, Pointer Events) until
+   *  the SDK can actually apply them; drop the flag to bring one back. */
+  hidden?: boolean
 }
 
 export interface DimensionDescriptor extends BaseDescriptor {
@@ -61,6 +66,13 @@ export interface LengthDescriptor extends BaseDescriptor {
  *  vertical/horizontal split is a UI-only convenience over the 4-value string. */
 export interface PaddingDescriptor extends BaseDescriptor {
   control: 'padding'
+}
+
+/** CSS-shorthand-style border radius: a single value (all corners equal) or a
+ *  4-value "top-left top-right bottom-right bottom-left" string — same shape as
+ *  padding, just with the CSS border-radius corner order instead of side order. */
+export interface RadiusDescriptor extends BaseDescriptor {
+  control: 'radius'
 }
 
 /** Width/height-style fields: a numeric value plus a sizing mode (fixed px, relative
@@ -147,6 +159,7 @@ export type PropertyDescriptor =
   | DimensionDescriptor
   | LengthDescriptor
   | PaddingDescriptor
+  | RadiusDescriptor
   | SizeLengthDescriptor
   | NumberDescriptor
   | BooleanDescriptor
@@ -474,9 +487,7 @@ export const PROPERTY_SCHEMA: PropertyDescriptor[] = [
     key: 'borderRadius',
     group: 'appearance',
     label: 'Radius',
-    control: 'dimension',
-    unit: 'px',
-    nullable: true,
+    control: 'radius',
     guard: supportsBorderRadius,
   },
   {
@@ -501,6 +512,10 @@ export const PROPERTY_SCHEMA: PropertyDescriptor[] = [
     control: 'percent',
     guard: alwaysSupported,
     synthetic: true,
+    // Hidden for now: the SDK has no corner-shape/smoothing attribute in any published
+    // version (3.10.3 / 3.11 beta / 4.0 alpha all checked), so this can only ever be a
+    // preset-only value. Shelved until Framer exposes it. See [[reference-framer-plugin-sdk-v4-upgrade]].
+    hidden: true,
   },
   {
     // Rendered specially, as an eye-icon toggle in the Appearance section's own header
@@ -522,6 +537,10 @@ export const PROPERTY_SCHEMA: PropertyDescriptor[] = [
     iconSet: 'pointer-events',
     guard: alwaysSupported,
     synthetic: true,
+    // Hidden for now: no pointer-events node trait exists in any published SDK version,
+    // so it can only ever be a preset-only value. Its Interaction section is the only
+    // one holding this field, so hiding it empties (and thus hides) that whole section.
+    hidden: true,
     options: [
       {value: 'auto', label: 'Auto'},
       {value: 'none', label: 'None'},

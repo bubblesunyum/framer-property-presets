@@ -36,6 +36,6 @@ export const EDITOR_ROWS: Record<PropertyGroup, EditorRow[]> = {
   ],
   // "visible" is rendered specially, as an eye-icon toggle in the section's own
   // header (see AppearanceSection) — excluded from this row list for that reason.
-  appearance: ['opacity', 'borderRadius', 'overflow', 'squircle'],
+  appearance: ['opacity', 'overflow', ['borderRadius', 'squircle']],
   interaction: ['pointerEvents'],
 }

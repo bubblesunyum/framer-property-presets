@@ -14,6 +14,10 @@
        1-of-3 cell at 8px without clipping. */
   height: 81px;
   width: 108px;
+  /* Never wider than its (now flex-shrinking) column, so on a narrow panel the grid
+     shrinks with the block instead of pushing past it into the elevation field. */
+  max-width: 100%;
+  min-width: 0;
   /* aspect-ratio: 1; */
   overflow: hidden;
   border-radius: 8px;

@@ -2,6 +2,7 @@ import {supportsName, type CanvasNode} from 'framer-plugin'
 import {useEffect, useState} from 'react'
 import {captureFromNode} from '../canvas/capturePreset'
 import {useBufferedInput} from '../hooks/useBufferedInput'
+import {notify} from '../lib/notify'
 import {isExplicitValue} from '../schema/propertySchema'
 import {createPreset, updatePreset} from '../storage/presetRepository'
 import {
@@ -217,7 +218,9 @@ export function PresetEditor(props: PresetEditorProps) {
       }
     } catch (error) {
       console.error('Failed to save preset', error)
-      setSaveState({kind: 'error', message: error instanceof Error ? error.message : 'Failed to save preset.'})
+      const message = error instanceof Error ? error.message : 'Failed to save preset.'
+      setSaveState({kind: 'error', message})
+      notify(message, 'error')
     }
   }
 

@@ -50,13 +50,19 @@ export function Dropdown({ value, options, onChange, nullable, nullLabel = "None
 
     useEffect(() => {
         if (!isOpen) return
+        // Move focus onto the current option so keyboard users can arrow through the list.
+        const active = listRef.current?.querySelector<HTMLButtonElement>(".dropdown-option.is-active")
+        ;(active ?? listRef.current?.querySelector<HTMLButtonElement>(".dropdown-option"))?.focus()
         const handlePointerDown = (event: MouseEvent) => {
             const target = event.target as Node
             if (listRef.current?.contains(target) || triggerRef.current?.contains(target)) return
             close()
         }
         const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key === "Escape") close()
+            if (event.key === "Escape") {
+                close()
+                triggerRef.current?.focus()
+            }
         }
         window.addEventListener("mousedown", handlePointerDown)
         window.addEventListener("keydown", handleKeyDown)
@@ -65,6 +71,17 @@ export function Dropdown({ value, options, onChange, nullable, nullLabel = "None
             window.removeEventListener("keydown", handleKeyDown)
         }
     }, [isOpen])
+
+    const handleListKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+        if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return
+        event.preventDefault()
+        const options = Array.from(listRef.current?.querySelectorAll<HTMLButtonElement>(".dropdown-option") ?? [])
+        if (options.length === 0) return
+        const currentIndex = options.indexOf(document.activeElement as HTMLButtonElement)
+        const delta = event.key === "ArrowDown" ? 1 : -1
+        const nextIndex = (currentIndex + delta + options.length) % options.length
+        options[nextIndex]?.focus()
+    }
 
     const current = options.find((option) => option.value === value)
     const triggerLabel = current ? (current.shortLabel ?? current.label) : nullLabel
@@ -75,6 +92,8 @@ export function Dropdown({ value, options, onChange, nullable, nullLabel = "None
                 type="button"
                 ref={triggerRef}
                 className="dropdown-trigger"
+                aria-haspopup="listbox"
+                aria-expanded={isOpen}
                 onClick={() => (isOpen ? close() : open())}
             >
                 <span className="dropdown-trigger-label">{triggerLabel}</span>
@@ -85,11 +104,15 @@ export function Dropdown({ value, options, onChange, nullable, nullLabel = "None
                     <div
                         ref={listRef}
                         className="dropdown-list"
+                        role="listbox"
+                        onKeyDown={handleListKeyDown}
                         style={{ top: position.top, left: position.left, minWidth: position.width }}
                     >
                         {nullable && (
                             <button
                                 type="button"
+                                role="option"
+                                aria-selected={value === null}
                                 className={value === null ? "dropdown-option is-active" : "dropdown-option"}
                                 onClick={() => {
                                     onChange(null)
@@ -103,6 +126,8 @@ export function Dropdown({ value, options, onChange, nullable, nullLabel = "None
                             <button
                                 key={option.value}
                                 type="button"
+                                role="option"
+                                aria-selected={option.value === value}
                                 className={option.value === value ? "dropdown-option is-active" : "dropdown-option"}
                                 onClick={() => {
                                     onChange(option.value)

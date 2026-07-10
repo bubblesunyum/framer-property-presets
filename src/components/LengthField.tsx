@@ -4,7 +4,7 @@ import {DRAG_THRESHOLD_PX} from '../lib/dragValueTracker'
 import {NumberField} from './NumberField'
 import './LengthField.css'
 
-type LengthMode = 'px' | '%' | 'fit-content' | 'fr' | 'vh'
+type LengthMode = 'px' | '%' | 'fit-content' | 'fit-image' | 'fr' | 'vh'
 
 interface LengthFieldProps {
   value: string | null
@@ -43,14 +43,23 @@ interface LengthFieldProps {
   parentIsStack?: boolean | null
 }
 
-const MODE_ORDER: LengthMode[] = ['px', '%', 'fit-content', 'fr', 'vh']
-const MODE_LABELS: Record<LengthMode, string> = {'%': '%', px: 'px', fr: 'fill', 'fit-content': 'fit', vh: 'vh'}
+const MODE_ORDER: LengthMode[] = ['px', '%', 'fit-content', 'fit-image', 'fr', 'vh']
+const MODE_LABELS: Record<LengthMode, string> = {
+  '%': '%',
+  px: 'px',
+  fr: 'fill',
+  'fit-content': 'fit',
+  // "fit image" — sizes the frame to its background image. Real SDK value (WidthLength /
+  // HeightLength both include FitImage); abbreviated to "img" in the compact unit chip.
+  'fit-image': 'img',
+  vh: 'vh',
+}
 
 function modesFor(axis: 'width' | 'height', constrained: boolean | undefined, parentIsStack: boolean | null | undefined): LengthMode[] {
   // Min/Max: px/% for both axes, plus vh for height (per the SDK's HeightConstraint).
-  // No fill/fit — not valid constraint values.
+  // No fill/fit/fit-image — not valid constraint values.
   if (constrained) return axis === 'height' ? ['px', '%', 'vh'] : ['px', '%']
-  // Width has no viewport unit at all; height gets vh.
+  // Width has no viewport unit at all; height gets vh. Both axes support fit-image.
   let modes = axis === 'height' ? MODE_ORDER : MODE_ORDER.filter((mode) => mode !== 'vh')
   // Fill is a flex ratio — only valid when the parent is a stack. Hide it otherwise.
   if (parentIsStack === false) modes = modes.filter((mode) => mode !== 'fr')
@@ -69,7 +78,7 @@ export function convertedAmount(
   ctx: {currentAmount: number | null; renderedPx: number | null; parentPx?: number | null; viewportPx?: number | null},
 ): number | null {
   if (toMode === 'fr') return 1
-  if (toMode === 'fit-content') return null
+  if (toMode === 'fit-content' || toMode === 'fit-image') return null
   const px = ctx.renderedPx
   if (px == null) return ctx.currentAmount
   if (toMode === 'px') return Math.round(px)
@@ -79,7 +88,8 @@ export function convertedAmount(
 }
 
 function parseLength(raw: string | null): {mode: LengthMode; amount: number | null} {
-  if (raw === 'fit-content' || raw === 'fit-image') return {mode: 'fit-content', amount: null}
+  if (raw === 'fit-content') return {mode: 'fit-content', amount: null}
+  if (raw === 'fit-image') return {mode: 'fit-image', amount: null}
   if (typeof raw === 'string') {
     const match = /^(-?\d*\.?\d+)(px|%|fr|vh)$/.exec(raw)
     if (match) return {mode: match[2] as LengthMode, amount: Number(match[1])}
@@ -89,6 +99,7 @@ function parseLength(raw: string | null): {mode: LengthMode; amount: number | nu
 
 function serializeLength(mode: LengthMode, amount: number | null): string {
   if (mode === 'fit-content') return 'fit-content'
+  if (mode === 'fit-image') return 'fit-image'
   return `${amount ?? (mode === 'fr' ? 1 : 0)}${mode}`
 }
 
@@ -115,7 +126,9 @@ export function LengthField({
   parentIsStack,
 }: LengthFieldProps) {
   const parsed = parseLength(value)
-  const isFit = parsed.mode === 'fit-content'
+  // Both "fit" modes have no numeric value of their own — the value chip shows the node's
+  // actual rendered px instead (disabled), same treatment for fit-content and fit-image.
+  const isFit = parsed.mode === 'fit-content' || parsed.mode === 'fit-image'
   const hasValue = parsed.amount != null
   const pillRef = useRef<HTMLDivElement>(null)
   const modes = useMemo(() => modesFor(axis, constrained, parentIsStack), [axis, constrained, parentIsStack])
@@ -373,7 +386,9 @@ function UnitButton({mode, modes, onSelect, onAfterSelect}: UnitButtonProps) {
     [],
   )
 
-  // Outside click / Escape closes the dropdown.
+  // Outside click / keyboard closes or navigates the dropdown. While open, arrow keys
+  // move the highlighted option (reusing hoverIndex so it shares the pointer highlight),
+  // Enter/Space picks it, and Escape closes — returning focus to the trigger either way.
   useEffect(() => {
     if (!isOpen) return
     const handleOutside = (event: MouseEvent) => {
@@ -382,7 +397,23 @@ function UnitButton({mode, modes, onSelect, onAfterSelect}: UnitButtonProps) {
       close()
     }
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') close()
+      if (event.key === 'Escape') {
+        close()
+        buttonRef.current?.focus()
+      } else if (event.key === 'ArrowDown') {
+        event.preventDefault()
+        setHoverIndex((i) => (i == null ? 0 : (i + 1) % modes.length))
+      } else if (event.key === 'ArrowUp') {
+        event.preventDefault()
+        setHoverIndex((i) => (i == null ? modes.length - 1 : (i - 1 + modes.length) % modes.length))
+      } else if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault()
+        if (hoverIndex != null && modes[hoverIndex]) {
+          commitMode(modes[hoverIndex])
+          close()
+          buttonRef.current?.focus()
+        }
+      }
     }
     window.addEventListener('mousedown', handleOutside)
     window.addEventListener('keydown', handleKeyDown)
@@ -390,26 +421,50 @@ function UnitButton({mode, modes, onSelect, onAfterSelect}: UnitButtonProps) {
       window.removeEventListener('mousedown', handleOutside)
       window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [isOpen])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, hoverIndex, modes])
+
+  // Keyboard: Enter/Space or an arrow opens the menu (a keyboard stand-in for the pointer
+  // press-and-hold), starting the highlight on the current unit.
+  const handleButtonKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (isOpen) return
+    if (event.key === 'Enter' || event.key === ' ' || event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault()
+      openAt()
+      setHoverIndex(Math.max(0, modes.indexOf(displayMode)))
+    }
+  }
 
   return (
     <>
       <button
         ref={buttonRef}
         type='button'
-        className='length-field-unit-button'
+        className={isOpen ? 'length-field-unit-button is-open' : 'length-field-unit-button'}
+        aria-haspopup='listbox'
+        aria-expanded={isOpen}
+        aria-label={`Unit: ${MODE_LABELS[displayMode] || 'px'}`}
         onPointerDown={handlePointerDown}
         onContextMenu={handleContextMenu}
+        onKeyDown={handleButtonKeyDown}
       >
         <span className='length-field-unit-label'>{MODE_LABELS[displayMode]}</span>
       </button>
       {position &&
         createPortal(
-          <div ref={listRef} className='length-field-unit-list' style={{top: position.top, left: position.left}}>
+          <div
+            ref={listRef}
+            className='length-field-unit-list'
+            role='listbox'
+            aria-label='Unit'
+            style={{top: position.top, left: position.left}}
+          >
             {modes.map((option, index) => (
               <button
                 key={option}
                 type='button'
+                role='option'
+                aria-selected={option === displayMode}
                 data-unit-index={index}
                 className={
                   option === displayMode

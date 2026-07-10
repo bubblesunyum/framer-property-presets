@@ -43,6 +43,11 @@ function Section({
   headerAction?: ReactNode
   children: ReactNode
 }) {
+  // A section with nothing to show is hidden entirely (no heading, no divider) rather than
+  // rendering an empty-state message — so shelving the synthetic-only fields also removes
+  // the now-empty Interaction section, and any section a given layer doesn't support just
+  // doesn't appear.
+  if (isEmpty) return null
   return (
     <>
       <section className='property-section'>
@@ -50,11 +55,7 @@ function Section({
           <h3 className='property-section-heading'>{title}</h3>
           {headerAction}
         </div>
-        {isEmpty ? (
-          <p className='property-section-empty'>This layer doesn't support {title.toLowerCase()} properties.</p>
-        ) : (
-          children
-        )}
+        {children}
       </section>
       <div className='framer-divider' />
     </>

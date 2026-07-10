@@ -76,6 +76,9 @@ export interface FieldPropsConfig {
 export function buildFieldProps(key: PresetPropertyKey, config: FieldPropsConfig): FieldProps | null {
   const descriptor = descriptorFor(key)
   if (!descriptor) return null
+  // Shelved fields (currently the synthetic-only Squircle / Pointer Events) stay in the
+  // schema and data model but never render — see BaseDescriptor.hidden.
+  if (descriptor.hidden) return null
   if (!Object.prototype.hasOwnProperty.call(config.properties, key)) return null
   if (descriptor.visibleWhen && !descriptor.visibleWhen(config.properties)) return null
 

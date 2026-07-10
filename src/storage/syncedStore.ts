@@ -58,23 +58,32 @@ function deserialize(id: string, raw: string): Preset | null {
 }
 
 async function loadAll(): Promise<Preset[]> {
-    const ids = await readIndex()
-    const presets: Preset[] = []
-    let indexNeedsRepair = false
+    // Reads are unprotected, but a host hiccup shouldn't take down the whole preset list
+    // (local presets still load independently) — degrade to "no synced presets" on error.
+    try {
+        const ids = await readIndex()
+        const presets: Preset[] = []
+        let indexNeedsRepair = false
 
-    for (const id of ids) {
-        const raw = await framer.getPluginData(keyFor(id))
-        if (raw === null) {
-            indexNeedsRepair = true
-            continue
+        for (const id of ids) {
+            const raw = await framer.getPluginData(keyFor(id))
+            if (raw === null) {
+                indexNeedsRepair = true
+                continue
+            }
+            const preset = deserialize(id, raw)
+            if (preset) presets.push(preset)
+            else indexNeedsRepair = true
         }
-        const preset = deserialize(id, raw)
-        if (preset) presets.push(preset)
-        else indexNeedsRepair = true
-    }
 
-    if (indexNeedsRepair) await writeIndex(presets.map((preset) => preset.id))
-    return presets
+        if (indexNeedsRepair && framer.isAllowedTo("setPluginData")) {
+            await writeIndex(presets.map((preset) => preset.id))
+        }
+        return presets
+    } catch (error) {
+        console.error("Failed to load synced presets", error)
+        return []
+    }
 }
 
 async function canFit(preset: Preset): Promise<boolean> {
@@ -132,10 +141,19 @@ async function write(preset: Preset): Promise<StorageResult<void>> {
 }
 
 async function remove(id: string): Promise<void> {
-    await framer.setPluginData(keyFor(id), null)
-    const ids = await readIndex()
-    const next = ids.filter((existingId) => existingId !== id)
-    if (next.length !== ids.length) await writeIndex(next)
+    // `setPluginData` is protected — calling it without permission sends a message the
+    // host never answers, hanging the promise forever (same reasoning as `write()`), so
+    // bail out first. A wrapped try/catch also keeps an unexpected host rejection from
+    // taking down the caller (e.g. moving a preset to local-only).
+    if (!framer.isAllowedTo("setPluginData")) return
+    try {
+        await framer.setPluginData(keyFor(id), null)
+        const ids = await readIndex()
+        const next = ids.filter((existingId) => existingId !== id)
+        if (next.length !== ids.length) await writeIndex(next)
+    } catch (error) {
+        console.error("Failed to remove synced preset", id, error)
+    }
 }
 
 export const syncedStore: PresetStore = { loadAll, write, remove, canFit }

@@ -1,4 +1,4 @@
-import type {CanvasNode} from 'framer-plugin'
+import {useIsAllowedTo, type CanvasNode} from 'framer-plugin'
 import {useCallback, useEffect, useMemo, useState} from 'react'
 import {applyAttributesToSelection} from '../canvas/applyPreset'
 import {captureFromNode} from '../canvas/capturePreset'
@@ -9,6 +9,23 @@ import {PropertySections} from './PropertySections'
 
 interface DesignPanelProps {
   selection: CanvasNode[]
+}
+
+/** How often the live-sync poll re-reads the node. Slower than it once was (600ms) to
+ *  cut idle work, since there's no push-based "attributes changed" event in the SDK. */
+const POLL_INTERVAL_MS = 1000
+
+/** Shallow per-key equality over two property maps — every value here is a primitive
+ *  (string/number/boolean/null), so a `!==` compare is exact and far cheaper than the
+ *  double `JSON.stringify` it replaces on every poll tick. */
+function shallowEqualProps(a: PresetProperties, b: PresetProperties): boolean {
+  const aKeys = Object.keys(a) as PresetPropertyKey[]
+  const bKeys = Object.keys(b) as PresetPropertyKey[]
+  if (aKeys.length !== bKeys.length) return false
+  for (const key of aKeys) {
+    if (a[key] !== b[key]) return false
+  }
+  return true
 }
 
 interface RectLike {
@@ -40,6 +57,11 @@ const EmptySize: ComputedSize = {
 export function DesignPanel({selection}: DesignPanelProps) {
   const primary = selection[0] ?? null
   const primaryId = (primary as {id?: string} | null)?.id ?? null
+  // Writing to the canvas needs the `setAttributes` permission. When it's unavailable
+  // (e.g. a Viewer role) the whole form goes read-only with an explanatory banner rather
+  // than letting edits silently no-op — matching Framer's "disable edit actions when the
+  // required permissions are unavailable".
+  const canEdit = useIsAllowedTo('setAttributes')
 
   const [properties, setProperties] = useState<PresetProperties>(() =>
     primary ? captureFromNode(primary).properties : {},
@@ -100,32 +122,61 @@ export function DesignPanel({selection}: DesignPanelProps) {
   // only `subscribeToSelection`, which fires on a *selection* change, not an edit made
   // within it. This is the best available substitute: poll the live node and pick up
   // whatever changed, so an edit made in Framer's own panel shows up here too, not just
-  // edits made through this one. Skips the update if nothing actually changed, so a tick
-  // where the node is untouched doesn't force a re-render. Each NumberField already
-  // guards its own local buffer against being overwritten while it's focused (see
-  // NumberField's `isFocusedRef`), so a poll landing mid-edit can't stomp on a keystroke.
+  // edits made through this one. Three things keep the polling cheap (per Framer's
+  // review): it's paused whenever the plugin panel isn't visible, it runs on a relaxed
+  // interval, and it diffs with a shallow per-key compare rather than a double
+  // JSON.stringify. Each NumberField also guards its own local buffer against being
+  // overwritten while focused (NumberField's `isFocusedRef`), so a poll landing mid-edit
+  // can't stomp on a keystroke.
   useEffect(() => {
     if (!primary) return
-    const interval = window.setInterval(() => {
+    let intervalId: number | undefined
+
+    const tick = () => {
       const fresh = captureFromNode(primary).properties
-      setProperties((prev) => (JSON.stringify(prev) === JSON.stringify(fresh) ? prev : fresh))
-    }, 600)
-    return () => window.clearInterval(interval)
+      setProperties((prev) => (shallowEqualProps(prev, fresh) ? prev : fresh))
+    }
+    const stop = () => {
+      if (intervalId !== undefined) {
+        window.clearInterval(intervalId)
+        intervalId = undefined
+      }
+    }
+    // Only poll while the panel is actually visible. (Deliberately not gated on window
+    // *focus*: the whole point is to reflect edits the user makes on the canvas, i.e.
+    // while the plugin is unfocused — so pausing on blur would defeat it.)
+    const sync = () => {
+      if (document.visibilityState === 'visible') {
+        if (intervalId === undefined) intervalId = window.setInterval(tick, POLL_INTERVAL_MS)
+      } else {
+        stop()
+      }
+    }
+    sync()
+    document.addEventListener('visibilitychange', sync)
+    return () => {
+      stop()
+      document.removeEventListener('visibilitychange', sync)
+    }
   }, [primary, primaryId])
 
   // Stable identities are load-bearing, not just tidy: every field's onChange ultimately
-  // closes over `commit`/`fieldProps`, and this panel re-renders every 600ms from the
-  // live-sync poll above even when nothing changed (well, it shouldn't — but a fresh
-  // function here on every render was cascading into every descendant's effects tearing
-  // down and rebuilding their event listeners on the same cadence, which showed up as a
-  // real bug: a drag-select gesture on LengthField's unit-mode picker could have its
-  // window listeners torn down and rebuilt mid-gesture).
+  // closes over `commit`/`fieldProps`, and this panel re-renders on the live-sync poll
+  // above whenever the node changed. A fresh function here on every render was cascading
+  // into every descendant's effects tearing down and rebuilding their event listeners on
+  // the same cadence, which showed up as a real bug: a drag-select gesture on
+  // LengthField's unit-mode picker could have its window listeners torn down and rebuilt
+  // mid-gesture.
   const commit = useCallback(
     (changes: PresetProperties) => {
+      // No-op when editing isn't permitted — the form is also visually locked below, this
+      // is the belt-and-suspenders guard so a stray interaction can't slip a write through.
+      if (!canEdit) return
       setProperties((prev) => ({...prev, ...changes}))
+      // applyAttributesToSelection surfaces its own throttled error notification on failure.
       void applyAttributesToSelection(changes, selection)
     },
-    [selection],
+    [selection, canEdit],
   )
 
   const fieldProps = useMemo(
@@ -155,10 +206,20 @@ export function DesignPanel({selection}: DesignPanelProps) {
 
   return (
     <div className='property-scroll framer-hide-scrollbar'>
+      {!canEdit && (
+        <p className='design-panel-notice' role='status'>
+          You don't have permission to edit this layer.
+        </p>
+      )}
       {/* Keyed by node id so per-node UI state (the min/max expanders, padding's
           expanded/collapsed side count) resets to its own defaults per selection,
-          rather than carrying over from whatever was previously selected. */}
-      <PropertySections key={primaryId ?? 'none'} fieldProps={fieldProps} />
+          rather than carrying over from whatever was previously selected. When editing
+          isn't allowed the whole form is dimmed and pointer interaction is blocked (the
+          `design-panel-locked` class); `commit` is gated too, so a keyboard edit also
+          no-ops. */}
+      <div className={canEdit ? undefined : 'design-panel-locked'} aria-disabled={!canEdit}>
+        <PropertySections key={primaryId ?? 'none'} fieldProps={fieldProps} />
+      </div>
     </div>
   )
 }

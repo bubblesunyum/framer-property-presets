@@ -9,3 +9,21 @@
     color: var(--framer-color-text-tertiary);
     font-size: 12px;
 }
+
+/* Shown at the top of the panel when the plugin lacks edit permission. */
+.design-panel-notice {
+    margin: 0;
+    padding: 10px 15px;
+    color: var(--framer-color-text-secondary);
+    font-size: 11px;
+    line-height: 1.4;
+    background: var(--framer-color-bg-secondary);
+    border-bottom: 1px solid var(--framer-color-divider);
+}
+
+/* Locks the whole property form when editing isn't allowed: no pointer/keyboard
+   interaction reaches the controls, and it dims to read as unavailable. */
+.design-panel-locked {
+    opacity: 0.55;
+    pointer-events: none;
+}

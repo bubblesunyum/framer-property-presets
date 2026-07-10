@@ -11,11 +11,10 @@
 
 .zindex-stack {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 4px;
-  /* ~20% narrower than the number field below, which fills the block's full width. */
-  width: 100%;
   height: 100%;
   /* align-self: center; */
 }
@@ -23,7 +22,9 @@
 .zindex-rect {
   flex: 1;
   min-height: 0;
-  width: 54px;
+  /* Fill the (flex-sized) stack column rather than a fixed 54px, which overflowed the
+     56px block and drew on top of the number field beside it. */
+  width: 100%;
   height: 100%;
   padding: 0;
   background: var(--framer-color-bg-tertiary);
@@ -41,9 +42,11 @@
   background: var(--control-selected-bg);
 }
 
-/* The number field fills the block's width; the rectangles above are the narrower ones. */
+/* The number field sits beside the rect stack, each taking half the block — neither
+   forced to the full 56px (which made the two overflow and overlap). */
 .zindex-field .number-field {
-  flex-shrink: 0;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
+  width: auto;
   justify-content: center;
 }

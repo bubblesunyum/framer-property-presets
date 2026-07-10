@@ -28,10 +28,21 @@
     --control-selected-bg: #4a4a52;
     --control-selected-fg: var(--framer-color-text);
 
+    /* A step darker than the selected surface — for a control that's actively pressed
+       or holding focus (a focused value chip, a unit button with its menu open), so it
+       reads as "sunken in" rather than merely selected. */
+    --control-pressed-bg: #33333c;
+
     /* Position-pin accent — distinct from --framer-color-tint (reserved for primary
        actions/focus): marks which edges of the position cross are actively pinned, in
        both the little PinWidget graphic and the T/R/B/L field labels beside it. */
     --position-accent: #4ade80;
+
+    /* Focus indicator for fields and custom controls: the same green as the pin accent,
+       plus a soft glow. Distinct from the primary-button glow (tint/purple) so a focused
+       *field* reads differently from the one primary action per screen. */
+    --focus-accent: var(--position-accent);
+    --focus-accent-glow: rgba(74, 222, 128, 0.25);
 
     color-scheme: dark;
 }
@@ -46,10 +57,54 @@ body {
     box-shadow: 0 4px 20px var(--framer-color-tint-dimmed);
 }
 
-.framer-button-primary:focus-visible,
-input:focus-visible,
-select:focus-visible {
+/* The primary action keeps the purple (tint) ring — it's the one primary button, not a
+   field. */
+.framer-button-primary:focus-visible {
     box-shadow:
         inset 0 0 0 1px var(--framer-color-tint),
         0 0 0 3px var(--framer-color-tint-dimmed);
+}
+
+/* Focused fields get a 1px green border + soft glow. `box-shadow` (not `border`) so
+   there's no layout shift, and it applies both to real inputs and to the custom pill
+   fields whose actual <input> is transparent inside them (target the visible box via
+   :focus-within there). */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+.number-field:focus-within,
+.length-field-value-unit .number-field:focus-within {
+    box-shadow:
+        inset 0 0 0 1px var(--focus-accent),
+        0 0 0 3px var(--focus-accent-glow);
+}
+
+/* Visible focus indicator for every custom (non-input) interactive control — segmented
+   options, alignment cells, elevation rects, unit chips, dropdown/menu items, preset
+   pills/rows, and the various icon-only buttons. Keyboard focus only (:focus-visible),
+   so a pointer click doesn't leave a lingering ring. `outline` rather than box-shadow so
+   controls that already use box-shadow for their own selected/pressed look aren't
+   overridden. */
+.segmented-option:focus-visible,
+.alignment-cell:focus-visible,
+.alignment-alt-cell:focus-visible,
+.alignment-pager-arrow:focus-visible,
+.zindex-rect:focus-visible,
+.length-field-unit-button:focus-visible,
+.length-field-unit-option:focus-visible,
+.length-field-expand:focus-visible,
+.length-field-clear:focus-visible,
+.dropdown-trigger:focus-visible,
+.dropdown-option:focus-visible,
+.preset-menu-trigger:focus-visible,
+.preset-menu-item:focus-visible,
+.preset-pill:focus-visible,
+.preset-row:focus-visible,
+.presets-caret:focus-visible,
+.flow-wrap-toggle:focus-visible,
+.appearance-visibility-toggle:focus-visible,
+.size-axes-lock:focus-visible {
+    outline: 2px solid var(--focus-accent);
+    outline-offset: 1px;
+    border-radius: 4px;
 }

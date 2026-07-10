@@ -5,6 +5,7 @@ import { LengthField } from "./LengthField"
 import { NumberField } from "./NumberField"
 import { PaddingField } from "./PaddingField"
 import "./PropertyRow.css"
+import { RadiusField } from "./RadiusField"
 import { SegmentedControl } from "./SegmentedControl"
 import { TextField } from "./TextField"
 import { ToggleSwitch } from "./ToggleSwitch"
@@ -77,16 +78,13 @@ export function renderControl(
                     value={parseNumeric(value)}
                     unit={descriptor.unit}
                     leftLabel={descriptor.displaySuffix}
-                    // Radius is a solo full-width row, capped narrow rather than
-                    // stretching all the way across. Gap sits beside Padding in the
-                    // dedicated GapPaddingRow layout (see PropertySections.tsx) — it gets
-                    // a wider compact cap there so Padding's own box still gets most of
-                    // the row's width.
-                    compact={descriptor.key === "borderRadius" || descriptor.key === "gap"}
+                    // Gap sits beside Padding in the dedicated GapPaddingRow layout (see
+                    // PropertySections.tsx) — it gets a compact cap there so Padding's own
+                    // box still gets most of the row's width.
+                    compact={descriptor.key === "gap"}
                     maxWidthPx={descriptor.key === "gap" ? 108 : undefined}
                     dim={value == null}
                     accentLabel={PIN_KEYS.has(descriptor.key)}
-                    dragSensitivity={descriptor.key === "borderRadius" ? 0.4 : 1}
                     onChange={(next) => onChange(`${next}${descriptor.unit}`)}
                     onClear={onClear}
                 />
@@ -122,6 +120,8 @@ export function renderControl(
             )
         case "padding":
             return <PaddingField value={typeof value === "string" ? value : null} onChange={onChange} />
+        case "radius":
+            return <RadiusField value={typeof value === "string" ? value : null} onChange={onChange} onClear={onClear} />
         case "boolean":
             return (
                 <input
@@ -204,13 +204,13 @@ export function renderControl(
  *  don't naturally pair with a neighbor. Dims when not (yet) included, rather than
  *  showing a separate include/exclude checkbox. */
 export function PropertyRow({ descriptor, value, included, onChange, onToggleIncluded, computedPx, onClear }: FieldProps) {
-    // Padding can grow taller as it expands to 4 sides — top-align the row so the label
-    // and the control's own expand button don't drift down as it grows. (Alignment used
-    // to need this too, but it's now rendered full-width with its own label above it,
-    // not through this labeled-row path at all.)
+    // Padding/Radius can grow taller as they expand to 4 sides/corners — top-align the
+    // row so the label and the control's own expand button don't drift down as it
+    // grows. (Alignment used to need this too, but it's now rendered full-width with
+    // its own label above it, not through this labeled-row path at all.)
     const classes = ["row", "property-row"]
     if (included) classes.push("is-included")
-    if (descriptor.control === "padding") classes.push("is-top")
+    if (descriptor.control === "padding" || descriptor.control === "radius") classes.push("is-top")
     return (
         <div className={classes.join(" ")}>
             <label

@@ -1,0 +1,38 @@
+.radius-field {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    width: 100%;
+}
+
+.radius-field-corners {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+}
+
+.radius-field-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 36px;
+    flex-shrink: 0;
+    /* framer.css's generic `button` rule forces 10px/side padding by default — without
+       overriding it here, this small square button squeezes its icon down to a sliver
+       since the padding alone nearly consumes its whole width. */
+    padding: 0;
+    background: var(--framer-color-bg-tertiary);
+    color: var(--framer-color-text-tertiary);
+    border-radius: 6px;
+}
+
+.radius-field-toggle:hover {
+    color: var(--framer-color-text);
+}
+
+.radius-field-toggle.is-active {
+    color: var(--framer-color-tint);
+}

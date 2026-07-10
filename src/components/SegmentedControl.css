@@ -24,6 +24,14 @@
     color: var(--framer-color-text-secondary);
     font-size: 12px;
     font-weight: 600;
+    /* framer.css forces `button { height: 30px }`. A definite height can't be stretched,
+       so with the control's `align-items: stretch` the 30px option (and its `.is-active`
+       background) got pinned to the top of the taller control, leaving extra gap below.
+       `height: auto` + `align-self: stretch` lets it fill the padded inner height so the
+       selected pill sits symmetrically. Same framer.css height trap the number fields
+       already had to override. */
+    height: auto;
+    align-self: stretch;
     /* framer.css's global button reset puts 10px of horizontal padding on every
        button — fine for a full-width control, but it leaves almost nothing for the
        label once 4 of these share one narrow mini-field (e.g. Width's Fill/Fit/%/px). */

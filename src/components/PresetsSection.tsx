@@ -1,6 +1,7 @@
 import type {CanvasNode} from 'framer-plugin'
 import {useState} from 'react'
 import {applyPresetToSelection} from '../canvas/applyPreset'
+import {notify} from '../lib/notify'
 import type {Preset} from '../types/preset'
 import {PresetList} from './PresetList'
 import './PresetsSection.css'
@@ -34,9 +35,20 @@ export function PresetsSection({
 }: PresetsSectionProps) {
   const [expanded, setExpanded] = useState(false)
 
-  const apply = (preset: Preset) => {
+  const apply = async (preset: Preset) => {
     if (selection.length === 0) return
-    void applyPresetToSelection(preset, selection)
+    const outcome = await applyPresetToSelection(preset, selection)
+    const failedCount = outcome.failedNodes.length
+    if (outcome.appliedCount === 0) {
+      notify(
+        failedCount > 0
+          ? "Couldn't apply the preset. The layer may be locked or protected."
+          : "This preset doesn't apply to the selected layer.",
+        'error',
+      )
+    } else if (failedCount > 0) {
+      notify(`Applied to ${outcome.appliedCount} of ${selection.length} layers.`, 'warning')
+    }
   }
 
   return (
@@ -46,7 +58,13 @@ export function PresetsSection({
         <button
           type='button'
           className={expanded ? 'presets-caret is-expanded' : 'presets-caret'}
-          // onClick={() => setExpanded((prev) => !prev)}
+          // The header row also toggles on click; stop propagation so this button's own
+          // activation (incl. keyboard Enter/Space, which the header <div> can't receive)
+          // doesn't double-toggle.
+          onClick={(event) => {
+            event.stopPropagation()
+            setExpanded((prev) => !prev)
+          }}
           aria-expanded={expanded}
           aria-label={expanded ? 'Collapse presets' : 'Expand presets'}
         >
@@ -67,7 +85,7 @@ export function PresetsSection({
                   key={preset.id}
                   type='button'
                   className='preset-pill'
-                  onClick={() => apply(preset)}
+                  onClick={() => void apply(preset)}
                   title={`Apply "${preset.name}"`}
                 >
                   {preset.name}

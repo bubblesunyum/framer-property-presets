@@ -1,9 +1,20 @@
 import { framer, type CanvasNode } from "framer-plugin"
+import { notify } from "../lib/notify"
 import { descriptorFor } from "../schema/propertySchema"
 import type { Preset, PresetPropertyKey } from "../types/preset"
 
 interface SettableNode {
     setAttributes: (attributes: Record<string, unknown>) => Promise<unknown>
+}
+
+/** Rapid live edits (or a poll landing on a still-broken node) shouldn't stack identical
+ *  error toasts — surface at most one every few seconds. */
+let lastLiveErrorAt = 0
+function notifyLiveErrorThrottled(message: string) {
+    const now = Date.now()
+    if (now - lastLiveErrorAt < 3000) return
+    lastLiveErrorAt = now
+    notify(message, "error")
 }
 
 export interface ApplyOutcome {
@@ -62,15 +73,29 @@ export async function applyPresetToSelection(preset: Preset, selection: CanvasNo
     return outcome
 }
 
+export interface LiveApplyOutcome {
+    /** True when the edit couldn't even be attempted because the plugin lacks the
+     *  `setAttributes` permission. */
+    notAllowed: boolean
+    /** Number of selected nodes whose write threw. */
+    failedCount: number
+}
+
 /** Live-edit path (Design panel): writes a small set of attribute changes to every
- *  selected node that supports each key. Fire-and-forget — each node is written
- *  independently so one unsupported/failed node doesn't block the others, and failures
- *  are logged rather than surfaced (the panel stays responsive as the user edits). */
+ *  selected node that supports each key. Each node is written independently so one
+ *  unsupported/failed node doesn't block the others. Failures are surfaced to the user
+ *  via a throttled notification (and returned to the caller) rather than only logged, so
+ *  an edit that silently doesn't take isn't left unexplained. */
 export async function applyAttributesToSelection(
     changes: Record<string, unknown>,
     selection: CanvasNode[]
-): Promise<void> {
-    if (!framer.isAllowedTo("setAttributes")) return
+): Promise<LiveApplyOutcome> {
+    if (!framer.isAllowedTo("setAttributes")) {
+        notifyLiveErrorThrottled("You don't have permission to edit this layer.")
+        return { notAllowed: true, failedCount: 0 }
+    }
+
+    let failedCount = 0
 
     await Promise.all(
         selection.map(async (node) => {
@@ -87,8 +112,19 @@ export async function applyAttributesToSelection(
             try {
                 await (node as unknown as SettableNode).setAttributes(payload)
             } catch (error) {
+                failedCount += 1
                 console.error("Live edit failed for node", node, error)
             }
         })
     )
+
+    if (failedCount > 0) {
+        notifyLiveErrorThrottled(
+            failedCount === selection.length
+                ? "Couldn't update the layer. It may be locked or protected."
+                : `Couldn't update ${failedCount} of ${selection.length} layers.`
+        )
+    }
+
+    return { notAllowed: false, failedCount }
 }
