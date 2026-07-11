@@ -1,4 +1,5 @@
 import { framer } from "framer-plugin"
+import { notifyThrottled } from "../lib/notify"
 import type { Preset } from "../types/preset"
 import { byteLength } from "./byteSize"
 import type { PresetStore, StorageResult } from "./types"
@@ -13,7 +14,18 @@ export const MAX_TOTAL_BYTES = 4096
 const keyFor = (id: string) => `${PRESET_PREFIX}${id}`
 
 async function readIndex(): Promise<string[]> {
-    const raw = await framer.getPluginData(INDEX_KEY)
+    // `getPluginData` is an unprotected read (confirmed against the SDK's own
+    // ProtectedMethod type — it's not gateable via isAllowedTo at all), but it's still a
+    // cross-iframe call that can reject on a host hiccup. Every caller already has its
+    // own outer try/catch (loadAll/write/remove), but guarding here too means this
+    // function never throws on its own, regardless of how a future caller is written.
+    let raw: string | null
+    try {
+        raw = await framer.getPluginData(INDEX_KEY)
+    } catch (error) {
+        console.error("Failed to read synced preset index", error)
+        return []
+    }
     if (!raw) return []
     try {
         const parsed: unknown = JSON.parse(raw)
@@ -29,17 +41,34 @@ async function writeIndex(ids: string[]): Promise<void> {
 
 /** Total bytes currently used across every key at the project level, optionally
  *  excluding one preset's own entry (used when checking whether an update to that
- *  same preset still fits). */
+ *  same preset still fits). `getPluginDataKeys`/`getPluginData` are unprotected reads —
+ *  confirmed against the SDK's own ProtectedMethod type, which excludes both — so
+ *  there's no `isAllowedTo` gate to check before calling them; the only failure mode is
+ *  a genuine rejection (a host hiccup), not a permission denial. On that failure, return
+ *  `Infinity` rather than letting the rejection propagate: both callers (`canFit`'s own
+ *  comparison and `write`'s inline budget check) already treat "existing total exceeds
+ *  the max" as "doesn't fit, stay local-only" — a safe, already-handled outcome — so this
+ *  one guard covers every caller without any of them needing their own try/catch. */
 async function totalBytes(excludingId?: string): Promise<number> {
-    const keys = await framer.getPluginDataKeys()
-    let total = 0
-    for (const key of keys) {
-        if (excludingId && key === keyFor(excludingId)) continue
-        const value = await framer.getPluginData(key)
-        if (value === null) continue
-        total += byteLength(key) + byteLength(value)
+    try {
+        const keys = await framer.getPluginDataKeys()
+        let total = 0
+        for (const key of keys) {
+            if (excludingId && key === keyFor(excludingId)) continue
+            const value = await framer.getPluginData(key)
+            if (value === null) continue
+            total += byteLength(key) + byteLength(value)
+        }
+        return total
+    } catch (error) {
+        console.error("Failed to read synced storage usage", error)
+        notifyThrottled(
+            "synced-storage-read",
+            "Couldn't check Framer's synced storage — saving to this device only.",
+            "warning"
+        )
+        return Infinity
     }
-    return total
 }
 
 function serialize(preset: Preset): string {
@@ -82,6 +111,7 @@ async function loadAll(): Promise<Preset[]> {
         return presets
     } catch (error) {
         console.error("Failed to load synced presets", error)
+        notifyThrottled("synced-storage-read", "Couldn't load presets synced to this project.", "warning")
         return []
     }
 }

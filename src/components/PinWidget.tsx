@@ -15,7 +15,7 @@ export function PinWidget({ top, right, bottom, left }: PinWidgetProps) {
     const inactiveStroke = "var(--framer-color-text-tertiary)"
 
     return (
-        <svg width="56" height="56" viewBox="0 0 56 56" fill="none" className="pin-widget">
+        <svg width="56" height="56" viewBox="0 0 56 56" fill="none" className="pin-widget" aria-hidden="true" focusable="false">
             <line x1="4" y1="28" x2="20" y2="28" stroke={left ? activeStroke : inactiveStroke} strokeWidth="1.5" opacity={left ? 1 : 0.4} />
             <line x1="4" y1="24" x2="4" y2="32" stroke={left ? activeStroke : inactiveStroke} strokeWidth="1.5" opacity={left ? 1 : 0.4} />
 

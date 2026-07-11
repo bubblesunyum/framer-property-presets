@@ -29,6 +29,12 @@
   height: 36px;
   display: flex;
   align-items: center;
+  /* framer.css's bare `button{justify-content:center}` rule doesn't get out-ranked just
+       because this rule sets `display:flex` for the same element — cascade resolves
+       per-property, and neither this rule nor the toggleable reset below touches
+       justify-content, so framer.css's `center` was the only rule left standing and
+       centered the label text inside its 88px column instead of left-aligning it. */
+  justify-content: flex-start;
 }
 
 .property-row-label {
@@ -38,6 +44,33 @@
 
 .property-row-label.is-toggleable,
 .mini-field-label.is-toggleable {
+  /* These are real <button>s now (for keyboard/AT support — see PropertyLabel in
+       PropertyRow.tsx). framer.css's generic `input,button,textarea,select` +
+       `button` rules force a 134px/100% width, 30px height, flex+centered layout, its
+       own background, and font-weight 500/600 — all reset back to plain inline label
+       text here. Deliberately NOT touching `color`/`font-size`: those are already set
+       correctly by the single-class `.property-row-label`/`.mini-field-label` rules
+       above, which — at one class each — are *less* specific than framer.css's bare
+       element selectors and would normally lose, except this combined two-class
+       selector is even more specific still; redeclaring `color`/`font` here (e.g. via
+       a `font: inherit` shorthand, which resets size too) would out-rank and break
+       that existing rule instead of leaving it in charge. */
+  display: inline-block;
+  width: auto;
+  height: auto;
+  min-height: 0;
+  padding: 0;
+  margin: 0;
+  background: none;
+  border: none;
+  border-radius: 0;
+  font-weight: inherit;
+  text-align: left;
+  /* Belt-and-suspenders: irrelevant while `display` is `inline-block` (justify-content
+       only means anything on a flex/grid container), but the `.is-top` variant above
+       switches this same element to `display:flex` at higher specificity — reset it
+       here too in case that pairing ever changes. */
+  justify-content: flex-start;
   cursor: pointer;
   user-select: none;
 }

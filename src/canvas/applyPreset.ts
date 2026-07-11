@@ -1,20 +1,10 @@
 import { framer, type CanvasNode } from "framer-plugin"
-import { notify } from "../lib/notify"
+import { notifyThrottled } from "../lib/notify"
 import { descriptorFor } from "../schema/propertySchema"
 import type { Preset, PresetPropertyKey } from "../types/preset"
 
 interface SettableNode {
     setAttributes: (attributes: Record<string, unknown>) => Promise<unknown>
-}
-
-/** Rapid live edits (or a poll landing on a still-broken node) shouldn't stack identical
- *  error toasts — surface at most one every few seconds. */
-let lastLiveErrorAt = 0
-function notifyLiveErrorThrottled(message: string) {
-    const now = Date.now()
-    if (now - lastLiveErrorAt < 3000) return
-    lastLiveErrorAt = now
-    notify(message, "error")
 }
 
 export interface ApplyOutcome {
@@ -91,7 +81,7 @@ export async function applyAttributesToSelection(
     selection: CanvasNode[]
 ): Promise<LiveApplyOutcome> {
     if (!framer.isAllowedTo("setAttributes")) {
-        notifyLiveErrorThrottled("You don't have permission to edit this layer.")
+        notifyThrottled("live-apply", "You don't have permission to edit this layer.", "error")
         return { notAllowed: true, failedCount: 0 }
     }
 
@@ -119,10 +109,12 @@ export async function applyAttributesToSelection(
     )
 
     if (failedCount > 0) {
-        notifyLiveErrorThrottled(
+        notifyThrottled(
+            "live-apply",
             failedCount === selection.length
                 ? "Couldn't update the layer. It may be locked or protected."
-                : `Couldn't update ${failedCount} of ${selection.length} layers.`
+                : `Couldn't update ${failedCount} of ${selection.length} layers.`,
+            "error"
         )
     }
 

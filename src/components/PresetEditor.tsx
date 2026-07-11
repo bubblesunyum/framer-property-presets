@@ -2,7 +2,7 @@ import {supportsName, type CanvasNode} from 'framer-plugin'
 import {useEffect, useState} from 'react'
 import {captureFromNode} from '../canvas/capturePreset'
 import {useBufferedInput} from '../hooks/useBufferedInput'
-import {notify} from '../lib/notify'
+import {notify, notifyThrottled} from '../lib/notify'
 import {isExplicitValue} from '../schema/propertySchema'
 import {createPreset, updatePreset} from '../storage/presetRepository'
 import {
@@ -104,15 +104,26 @@ export function PresetEditor(props: PresetEditorProps) {
   })
 
   // Fetch the live node's actual rendered size once, for Width/Height's "Fit" display —
-  // create mode only, since edit mode has no live node to measure.
+  // create mode only, since edit mode has no live node to measure. `getRect` is an
+  // unprotected read (see DesignPanel's identical comment), so the only failure mode is a
+  // genuine rejection, not a permission denial — the promise chain previously had no
+  // `.catch()` at all here, so a rejection would have surfaced as an unhandled promise
+  // rejection (caught by main.tsx's global handler, replacing the whole editor with the
+  // "Something went wrong" screen over what's really just a cosmetic Fit-display miss).
   useEffect(() => {
     if (props.mode !== 'create') return
     let active = true
     const node = props.node as {getRect?: () => Promise<{width: number; height: number} | null>}
-    void node.getRect?.().then((rect) => {
-      if (!active) return
-      setComputedSize({width: rect?.width ?? null, height: rect?.height ?? null})
-    })
+    void node.getRect
+      ?.()
+      .then((rect) => {
+        if (!active) return
+        setComputedSize({width: rect?.width ?? null, height: rect?.height ?? null})
+      })
+      .catch((error: unknown) => {
+        console.error('Failed to read layer size', error)
+        if (active) notifyThrottled('layer-rect-read', "Couldn't read this layer's size.", 'warning')
+      })
     return () => {
       active = false
     }

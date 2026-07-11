@@ -103,8 +103,24 @@ select:focus-visible,
 .presets-caret:focus-visible,
 .flow-wrap-toggle:focus-visible,
 .appearance-visibility-toggle:focus-visible,
-.size-axes-lock:focus-visible {
+.size-axes-lock:focus-visible,
+.padding-field-toggle:focus-visible,
+.radius-field-toggle:focus-visible,
+.preset-icon-button:focus-visible,
+.preset-color-swatch:focus-visible,
+.preset-icon-swatch:focus-visible,
+.preset-icon-picker-expand:focus-visible,
+.property-row-label.is-toggleable:focus-visible,
+.mini-field-label.is-toggleable:focus-visible {
     outline: 2px solid var(--focus-accent);
     outline-offset: 1px;
     border-radius: 4px;
+}
+
+/* The colormap is a focusable div (role="slider") rather than a button — its own
+   background already reads as a raised surface, so a plain outline (not inset) keeps
+   the ring from fighting the gradient underneath. */
+.preset-icon-picker-colormap:focus-visible {
+    outline: 2px solid var(--focus-accent);
+    outline-offset: 1px;
 }

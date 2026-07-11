@@ -59,9 +59,20 @@ export function PresetListItem({ preset, selection, refreshToken, onMoved, onDel
     useEffect(() => {
         if (preset.location !== "local") return
         let active = true
-        void canFitInSynced(preset).then((fits) => {
-            if (active) setCanMoveToSynced(fits)
-        })
+        // canFitInSynced (via syncedStore's totalBytes) no longer rejects on a read
+        // failure — it resolves to a safe "doesn't fit" instead — but this .catch() stays
+        // as defense-in-depth: a fire-and-forget promise with no rejection handler here
+        // would otherwise become an unhandled rejection, which main.tsx's global handler
+        // turns into a full-screen error over what's really just a minor "can't move to
+        // synced" affordance.
+        void canFitInSynced(preset)
+            .then((fits) => {
+                if (active) setCanMoveToSynced(fits)
+            })
+            .catch((error: unknown) => {
+                console.error("Failed to check synced storage budget", error)
+                if (active) setCanMoveToSynced(false)
+            })
         return () => {
             active = false
         }

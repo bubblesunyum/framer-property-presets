@@ -29,6 +29,19 @@ export default defineConfig(({ mode }) => ({
     // cache with a copy that's missing framer-plugin, breaking the real dev server with
     // 504s until its cache is cleared — this happened once already.
     cacheDir: mode === "preview-mock" ? "node_modules/.vite-preview-mock" : undefined,
+    build: {
+        // The marketplace review team reads the submitted zip's JS directly rather than
+        // asking for a separate source drop — keep real identifiers/structure (no
+        // esbuild name-mangling/collapsing) so it stays legible there. This only affects
+        // `vite build`'s output; still one bundled file per the same architecture, just
+        // not obfuscated. Gzip already does the size-reduction work either way (this
+        // project is a UI plugin, not something where a few extra raw KB matters).
+        minify: false,
+        // `cssMinify` defaults to following `minify`, which would also unminify the CSS —
+        // unlike JS, minified CSS doesn't obscure program *logic* for a reviewer (it's
+        // just condensed style values), so keep it compact on its own.
+        cssMinify: true,
+    },
     // Forces one complete dependency scan on cold start instead of an initial pass that
     // discovers `framer-plugin` late and has to redo the bundle with new chunk hashes —
     // that second pass is what left the browser holding a reference to a chunk file

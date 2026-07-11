@@ -87,11 +87,14 @@ export function AlignmentGrid({value, onChange, showAlternates}: AlignmentGridPr
           </div>
         </div>
         <div className={showAlternates ? 'alignment-slide is-alternates' : 'alignment-slide is-alternates is-away-below'}>
-          <div className='alignment-alternates'>
+          <div className='alignment-alternates' role='radiogroup' aria-label='Distribution'>
             {SPACE_OPTIONS.map((option) => (
               <button
                 key={option}
                 type='button'
+                role='radio'
+                aria-checked={distribution === option}
+                aria-label={`Distribute ${SPACE_LABELS[option]}`}
                 className={distribution === option ? 'alignment-alt-cell is-selected' : 'alignment-alt-cell'}
                 onClick={() => onChange({distribution: option, alignment: alignment ?? 'start'})}
                 title={option.replace('space-', 'Space ')}

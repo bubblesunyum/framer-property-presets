@@ -46,11 +46,18 @@ export function Tooltip({ content, children, className }: TooltipProps) {
             className={className ? `tooltip-anchor ${className}` : "tooltip-anchor"}
             onMouseEnter={show}
             onMouseLeave={hide}
+            // Keyboard-focus parity with hover (WCAG 1.4.13) — without this, the content
+            // here (often *why* something is disabled) was only ever reachable by mouse.
+            // React's onFocus/onBlur bubble from the focusable child inside this span, so
+            // no change is needed at the child's own callsite.
+            onFocus={show}
+            onBlur={hide}
         >
             {children}
             {position &&
                 createPortal(
                     <span
+                        role="tooltip"
                         className="tooltip-bubble"
                         style={{
                             top: position.top,

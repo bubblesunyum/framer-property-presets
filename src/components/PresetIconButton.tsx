@@ -1,7 +1,8 @@
+import type {AriaAttributes} from 'react'
 import {PresetIcon, resolvePresetColor} from './presetAppearance'
 import './PresetIconButton.css'
 
-interface PresetIconButtonProps {
+interface PresetIconButtonProps extends Pick<AriaAttributes, 'aria-haspopup' | 'aria-expanded'> {
   icon: string
   color: string
   size?: number
@@ -14,7 +15,7 @@ interface PresetIconButtonProps {
  *  (small, as the trigger for PresetIconPicker). A faded-neon glow (a soft radial tint
  *  behind a near-black fill, matching the app's own accent language) rather than a
  *  flat saturated color, per each preset's own chosen hue. */
-export function PresetIconButton({icon, color, size = 44, onClick, title}: PresetIconButtonProps) {
+export function PresetIconButton({icon, color, size = 44, onClick, title, ...ariaProps}: PresetIconButtonProps) {
   const hex = resolvePresetColor(color)
   return (
     <button
@@ -29,6 +30,8 @@ export function PresetIconButton({icon, color, size = 44, onClick, title}: Prese
       }}
       onClick={onClick}
       title={title}
+      aria-label={title ?? 'Preset icon'}
+      {...ariaProps}
     >
       <PresetIcon name={icon} />
     </button>

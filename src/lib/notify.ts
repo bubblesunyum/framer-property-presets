@@ -18,3 +18,17 @@ export function notify(message: string, variant: NotifyVariant = "info") {
     }
     if (variant === "error" || variant === "warning") console.warn(`[SpeedStyle] ${message}`)
 }
+
+const lastNotifiedAt = new Map<string, number>()
+
+/** Same as `notify`, but rate-limited per `key` — for failures that can recur in a tight
+ *  loop (a live-edit poll landing on a still-broken node, a permission/read check re-run
+ *  on every preset row) where a fresh toast per occurrence would just be noise. At most
+ *  one notification per `key` within `throttleMs` (default 3s). */
+export function notifyThrottled(key: string, message: string, variant: NotifyVariant = "info", throttleMs = 3000) {
+    const now = Date.now()
+    const last = lastNotifiedAt.get(key) ?? 0
+    if (now - last < throttleMs) return
+    lastNotifiedAt.set(key, now)
+    notify(message, variant)
+}

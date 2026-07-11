@@ -49,7 +49,7 @@ export function PresetList({
     <main className='preset-list'>
       <div className='preset-list-body framer-hide-scrollbar'>
         {isLoading ? (
-          <div className='preset-list-empty'>
+          <div className='preset-list-empty' role='status' aria-label='Loading presets'>
             <div className='framer-spinner' />
           </div>
         ) : presets.length === 0 ? (

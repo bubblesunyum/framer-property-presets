@@ -2,6 +2,7 @@ import {useIsAllowedTo, type CanvasNode} from 'framer-plugin'
 import {useCallback, useEffect, useMemo, useState} from 'react'
 import {applyAttributesToSelection} from '../canvas/applyPreset'
 import {captureFromNode} from '../canvas/capturePreset'
+import {notifyThrottled} from '../lib/notify'
 import type {PresetProperties, PresetPropertyKey} from '../types/preset'
 import './DesignPanel.css'
 import {buildFieldProps} from './fieldProps'
@@ -84,7 +85,12 @@ export function DesignPanel({selection}: DesignPanelProps) {
 
   // Fetch the node's actual rendered size (shown as Width/Height's value in "Fit" mode)
   // and its parent's size (used to convert px↔% when the user switches units) — async,
-  // so it stays in an effect.
+  // so it stays in an effect. `getRect`/`getParent` are unprotected reads (confirmed
+  // against the SDK's ProtectedMethod type — neither is gateable via isAllowedTo), so the
+  // only failure mode here is a genuine rejection, not a permission denial; on that
+  // failure the "Fit" display/unit-conversion math just degrades to its existing
+  // unknown-context fallback (see convertedAmount), but the user wasn't told why — add a
+  // throttled notification so a real, recurring failure isn't silent.
   useEffect(() => {
     let active = true
     const node = primary as RectLike | null
@@ -108,8 +114,11 @@ export function DesignPanel({selection}: DesignPanelProps) {
           parentHeight: parentRect?.height ?? null,
           parentIsStack,
         })
-      } catch {
-        if (active) setComputedSize(EmptySize)
+      } catch (error) {
+        console.error('Failed to read layer size', error)
+        if (!active) return
+        setComputedSize(EmptySize)
+        notifyThrottled('layer-rect-read', "Couldn't read this layer's size.", 'warning')
       }
     })()
     return () => {

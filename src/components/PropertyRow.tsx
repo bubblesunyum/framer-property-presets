@@ -200,6 +200,36 @@ export function renderControl(
     }
 }
 
+/** The field label, doubling in edit mode as the include/exclude toggle. A real
+ *  `<button>` (not a `<label>`, which isn't associated with any form control here and
+ *  had no keyboard/AT support at all despite being the only way to remove a field from a
+ *  preset) when `onToggleIncluded` is given; plain text otherwise, since it isn't
+ *  interactive outside edit mode. */
+function PropertyLabel({
+    label,
+    included,
+    onToggleIncluded,
+    className,
+}: {
+    label: string
+    included: boolean
+    onToggleIncluded?: () => void
+    className: string
+}) {
+    if (!onToggleIncluded) return <span className={className}>{label}</span>
+    return (
+        <button
+            type="button"
+            className={`${className} is-toggleable`}
+            onClick={onToggleIncluded}
+            aria-pressed={included}
+            title={included ? `Remove ${label} from preset` : `Add ${label} to preset`}
+        >
+            {label}
+        </button>
+    )
+}
+
 /** Full-width row: label on the left, control filling the rest — for properties that
  *  don't naturally pair with a neighbor. Dims when not (yet) included, rather than
  *  showing a separate include/exclude checkbox. */
@@ -213,12 +243,12 @@ export function PropertyRow({ descriptor, value, included, onChange, onToggleInc
     if (descriptor.control === "padding" || descriptor.control === "radius") classes.push("is-top")
     return (
         <div className={classes.join(" ")}>
-            <label
-                className={onToggleIncluded ? "property-row-label is-toggleable" : "property-row-label"}
-                onClick={onToggleIncluded}
-            >
-                {descriptor.label}
-            </label>
+            <PropertyLabel
+                label={descriptor.label}
+                included={included}
+                onToggleIncluded={onToggleIncluded}
+                className="property-row-label"
+            />
             <div className="property-row-control" onClick={activateNestedFieldOnEmptyClick}>
                 {renderControl(descriptor, value, onChange, computedPx, onClear)}
             </div>
@@ -241,12 +271,12 @@ export function PropertyControlOnly({ descriptor, value, included, onChange, com
 export function PropertyMiniField({ descriptor, value, included, onChange, onToggleIncluded, computedPx, onClear }: FieldProps) {
     return (
         <div className={included ? "mini-field is-included" : "mini-field"}>
-            <label
-                className={onToggleIncluded ? "mini-field-label is-toggleable" : "mini-field-label"}
-                onClick={onToggleIncluded}
-            >
-                {descriptor.label}
-            </label>
+            <PropertyLabel
+                label={descriptor.label}
+                included={included}
+                onToggleIncluded={onToggleIncluded}
+                className="mini-field-label"
+            />
             {renderControl(descriptor, value, onChange, computedPx, onClear)}
         </div>
     )

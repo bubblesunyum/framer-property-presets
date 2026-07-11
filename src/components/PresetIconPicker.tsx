@@ -31,6 +31,11 @@ function hslToHex(h: number, s: number, l: number): string {
 export function PresetIconPicker({icon, color, onChange}: PresetIconPickerProps) {
   const [position, setPosition] = useState<{top: number; left: number} | null>(null)
   const [showAllIcons, setShowAllIcons] = useState(false)
+  // A virtual cursor for keyboard use — the colormap's actual value (`color`) is an
+  // opaque string (a named swatch or an arbitrary hex from a previous pick), so there's
+  // no way to recover "where in the square" it came from to continue nudging from there.
+  // Resets to a sensible starting point each time the popover opens instead.
+  const [mapCursor, setMapCursor] = useState({hue: 0, lightness: 0.5})
   const triggerRef = useRef<HTMLDivElement>(null)
   const popoverRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<HTMLDivElement>(null)
@@ -43,6 +48,14 @@ export function PresetIconPicker({icon, color, onChange}: PresetIconPickerProps)
     setPosition({top: rect.bottom + 6, left: rect.left})
   }
 
+  // Move focus into the popover when it opens, so keyboard users land on an actionable
+  // control (matches Dropdown/PresetMenu's pattern).
+  useEffect(() => {
+    if (!isOpen) return
+    setMapCursor({hue: 0, lightness: 0.5})
+    popoverRef.current?.querySelector<HTMLButtonElement>('button')?.focus()
+  }, [isOpen])
+
   useEffect(() => {
     if (!isOpen) return
     const handlePointerDown = (event: MouseEvent) => {
@@ -51,7 +64,10 @@ export function PresetIconPicker({icon, color, onChange}: PresetIconPickerProps)
       close()
     }
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') close()
+      if (event.key === 'Escape') {
+        close()
+        triggerRef.current?.querySelector<HTMLButtonElement>('button')?.focus()
+      }
     }
     window.addEventListener('mousedown', handlePointerDown)
     window.addEventListener('keydown', handleKeyDown)
@@ -72,12 +88,38 @@ export function PresetIconPicker({icon, color, onChange}: PresetIconPickerProps)
     onChange({icon, color: hslToHex(hue, 1, lightness)})
   }
 
+  // Keyboard equivalent of dragging a point around the map — left/right steps hue
+  // around the wheel, up/down steps lightness from black to white. There's no on-screen
+  // cursor to keep visually in sync with (the map has no crosshair indicator at all,
+  // for mouse use either), so this uses a plain monotonic lightness rather than
+  // replicating pickFromMap's inverted-V curve (which only exists to make the *visual*
+  // gradient read as two stacked halves) — simpler, and just as reachable a color space.
+  const nudgeMap = (event: React.KeyboardEvent) => {
+    let {hue, lightness} = mapCursor
+    if (event.key === 'ArrowLeft') hue = (hue - 15 + 360) % 360
+    else if (event.key === 'ArrowRight') hue = (hue + 15) % 360
+    else if (event.key === 'ArrowUp') lightness = Math.min(1, lightness + 0.05)
+    else if (event.key === 'ArrowDown') lightness = Math.max(0, lightness - 0.05)
+    else return
+    event.preventDefault()
+    setMapCursor({hue, lightness})
+    onChange({icon, color: hslToHex(hue, 1, lightness)})
+  }
+
   const commonIcons = PRESET_ICONS.slice(0, COMMON_ICON_COUNT)
   const restIcons = PRESET_ICONS.slice(COMMON_ICON_COUNT)
 
   return (
     <div ref={triggerRef} className='preset-icon-picker-trigger'>
-      <PresetIconButton icon={icon} color={color} size={36} onClick={() => (isOpen ? close() : open())} title='Customize icon' />
+      <PresetIconButton
+        icon={icon}
+        color={color}
+        size={36}
+        onClick={() => (isOpen ? close() : open())}
+        title='Customize icon'
+        aria-haspopup='dialog'
+        aria-expanded={isOpen}
+      />
       {position &&
         createPortal(
           <div ref={popoverRef} className='preset-icon-picker' style={{top: position.top, left: position.left}}>
@@ -95,7 +137,16 @@ export function PresetIconPicker({icon, color, onChange}: PresetIconPickerProps)
                 />
               ))}
             </div>
-            <div ref={mapRef} className='preset-icon-picker-colormap' onClick={pickFromMap} />
+            <div
+              ref={mapRef}
+              className='preset-icon-picker-colormap'
+              onClick={pickFromMap}
+              onKeyDown={nudgeMap}
+              role='slider'
+              tabIndex={0}
+              aria-label='Custom color'
+              aria-valuetext={`Hue ${Math.round(mapCursor.hue)}, lightness ${Math.round(mapCursor.lightness * 100)}%`}
+            />
 
             <p className='preset-icon-picker-label'>Icon</p>
             <div className='preset-icon-picker-icons'>
