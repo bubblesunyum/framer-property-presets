@@ -222,7 +222,11 @@ export function PresetEditor(props: PresetEditorProps) {
       }
 
       if (result.value.fellBackToLocal) {
-        setSaveState({kind: 'note', message: 'Saved to this device — synced storage is full.'})
+        const message =
+          result.value.syncBlockedReason === 'permission'
+            ? "Saved to this device — you don't have permission to sync to this project."
+            : 'Saved to this device — synced storage is full.'
+        setSaveState({kind: 'note', message})
         window.setTimeout(onSaved, 1400)
       } else {
         onSaved()

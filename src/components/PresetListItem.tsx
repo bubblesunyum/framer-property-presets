@@ -51,6 +51,12 @@ function LocalIcon() {
 
 export function PresetListItem({ preset, selection, refreshToken, onMoved, onDeleted, onEdit }: PresetListItemProps) {
     const isAllowedToApply = useIsAllowedTo("setAttributes")
+    // Moving a preset in either direction writes project plugin data (synced storage) —
+    // to the cloud (local→synced) or removing the cloud copy (synced→local) — both of
+    // which go through the protected `setPluginData`. Gate the action on that permission
+    // so a user who can't sync doesn't see an enabled control that silently fails. This
+    // is the exact identifier Framer's own example plugins use for project data writes.
+    const isAllowedToSync = useIsAllowedTo("setPluginData")
     const [status, setStatus] = useState<"idle" | "applied" | "failed">("idle")
     const [canMoveToSynced, setCanMoveToSynced] = useState(true)
     const [confirmingDelete, setConfirmingDelete] = useState(false)
@@ -82,7 +88,12 @@ export function PresetListItem({ preset, selection, refreshToken, onMoved, onDel
 
     const applyDisabled = selection.length === 0 || !isAllowedToApply
     const moveTarget = preset.location === "synced" ? "local" : "synced"
-    const moveToSyncedBlocked = preset.location === "local" && !canMoveToSynced
+    // Blocked when the plugin can't write project data at all, or (for local→synced only)
+    // when synced storage is out of room.
+    const moveBlocked = !isAllowedToSync || (moveTarget === "synced" && !canMoveToSynced)
+    const moveDisabledReason = !isAllowedToSync
+        ? "You don't have permission to change this project's synced presets."
+        : "Not enough room in Framer's synced storage — move another preset to this device to free up space."
 
     const handleApply = async () => {
         if (applyDisabled) return
@@ -108,9 +119,16 @@ export function PresetListItem({ preset, selection, refreshToken, onMoved, onDel
     }
 
     const handleMove = async () => {
-        if (moveTarget === "synced" && moveToSyncedBlocked) return
+        if (moveBlocked) return
         const result = await movePreset(preset, moveTarget)
-        if (result.ok) onMoved(result.value)
+        if (result.ok) {
+            onMoved(result.value)
+        } else {
+            // Belt-and-suspenders: the menu item is already disabled without permission,
+            // but if a move still comes back denied (e.g. permission changed mid-session),
+            // tell the user rather than silently doing nothing.
+            notify(result.message, "error")
+        }
     }
 
     const handleDelete = async () => {
@@ -135,8 +153,8 @@ export function PresetListItem({ preset, selection, refreshToken, onMoved, onDel
             key: "move",
             label: moveTarget === "local" ? "Move to local storage" : "Move to synced storage",
             onClick: () => void handleMove(),
-            disabled: moveToSyncedBlocked,
-            disabledReason: "Not enough room in Framer's synced storage — move another preset to this device to free up space.",
+            disabled: moveBlocked,
+            disabledReason: moveDisabledReason,
         },
     ]
 

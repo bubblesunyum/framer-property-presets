@@ -6,6 +6,10 @@ import type { StorageResult } from "./types"
 export interface CreateResult {
     preset: Preset
     fellBackToLocal: boolean
+    /** Why the cloud mirror was skipped (only set when `fellBackToLocal`): "permission"
+     *  when the user can't write project plugin data, "budget" when synced storage is
+     *  full. Lets the UI show an accurate reason instead of always blaming capacity. */
+    syncBlockedReason?: "permission" | "budget"
 }
 
 /** Local storage is the durable source of truth — every preset always lives there. The
@@ -39,16 +43,26 @@ export async function createPreset(
     const localResult = await localStore.write({ ...base, location: "local" })
     if (!localResult.ok) return localResult
 
-    // Then mirror to the cloud if there's room.
+    // Then mirror to the cloud if there's room and it's permitted.
     let synced = false
+    let syncBlockedReason: "permission" | "budget" | undefined
     const syncedCandidate: Preset = { ...base, location: "synced" }
     if (await syncedStore.canFit(syncedCandidate)) {
         const result = await syncedStore.write(syncedCandidate)
         synced = result.ok
+        // write() short-circuits on a missing setPluginData permission before ever
+        // invoking the protected call — so this branch is a clean fall-back-to-local,
+        // not a failed write. Surface *why* so the note can be accurate.
+        if (!result.ok) syncBlockedReason = result.reason === "permission-denied" ? "permission" : "budget"
+    } else {
+        syncBlockedReason = "budget"
     }
 
     const preset: Preset = { ...base, location: synced ? "synced" : "local" }
-    return { ok: true, value: { preset, fellBackToLocal: !synced } }
+    return {
+        ok: true,
+        value: { preset, fellBackToLocal: !synced, syncBlockedReason: synced ? undefined : syncBlockedReason },
+    }
 }
 
 /** Same budget check the cloud write uses, exposed so the UI can gray out the "move to
